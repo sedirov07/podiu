@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    build:
+      context: ./db
+    ports:
+      - "5432:5432"
+
+  api_model:
+    build:
+      context: ./api_model
+    ports:
+      - "8082:8082"
+    depends_on:
+      - db
+
+  outlook_bot:
+    build:
+      context: ./outlook_bot
+    depends_on:
+      - db
+      - api_model
+
+  telegram_bot:
+    build:
+      context: ./telegram_bot
+    volumes:
+      - data_applyes:/app/data_applyes
+    depends_on:
+      - db
+      - api_model
+
+volumes:
+  db_data:
+  data_applyes:
