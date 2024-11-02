@@ -70,11 +70,5 @@ questions_actions_keyboard = InlineKeyboardMarkup(inline_keyboard=[
             text='Удалить вопрос',
             callback_data='delete_question_api'
         )
-    ],
-    [
-        InlineKeyboardButton(
-            text='Изменить ключевые слова',
-            callback_data='change_keywords_api'
-        )
     ]
 ])
