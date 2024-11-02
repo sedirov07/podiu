@@ -42,13 +42,6 @@ async def delete_question_api(q_id) -> bool:
             return response.status == 200
 
 
-async def edit_keywords_api(q_id, new_keywords) -> bool:
-    api = f"http://{API_HOST}:{API_PORT}/keywords/edit"
-    async with aiohttp.ClientSession() as session:
-        async with session.put(api, json={"id": q_id, "keywords": new_keywords}) as response:
-            return response.status == 200
-
-
 async def handle_pagination(call: CallbackQuery):
     data = call.data
     if data.startswith('page_'):
@@ -175,32 +168,3 @@ async def delete_question_model(call: CallbackQuery, state: FSMContext):
         await del_translation_text(question)
         await del_translation_text(answer)
         await call.message.answer(f'*Вопрос* {question} удален.', reply_markup=admin_menu_keyboard)
-
-
-# Изменение ключевых слов
-async def change_keywords_model(call: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    q_id = data['q_id']
-    questions = data['questions']
-    keywords = ''
-
-    for quest in questions:
-        if q_id == int(quest['id']):
-            keywords = quest['keywords']
-            break
-
-    await call.message.answer(f'*Текущие ключевые слова:* {keywords}\n'
-                              f'*Введите новые ключевые слова (через запятую):*')
-    await state.update_data(q_id=q_id, keywords=keywords)
-    await state.set_state(StepsQuestionModel.GET_NEW_KEYWORDS)
-
-
-# Добавление ключевых слов
-async def add_keywords_model(message: Message, state: FSMContext):
-    data = await state.get_data()
-    q_id = data.get('q_id')
-    new_keywords = message.text.lower()
-
-    await edit_keywords_api(q_id=q_id, new_keywords=new_keywords)
-    await message.answer(f'*Ключевые слова* {new_keywords} добавлены.', reply_markup=admin_menu_keyboard)
-    await state.clear()
