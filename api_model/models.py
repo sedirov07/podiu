@@ -16,10 +16,5 @@ class EditQuestion(BaseModel):
     answer: str
 
 
-class EditKeywords(BaseModel):
-    id: int
-    keywords: str
-
-
 class DeleteQuestion(BaseModel):
     id: int
