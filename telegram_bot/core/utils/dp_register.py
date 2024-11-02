@@ -243,8 +243,4 @@ async def dp_register(dp):
     dp.callback_query.register(admin_api.delete_question_model, F.data == 'delete_question_api', is_admin,
                                StepsQuestionModel.GET_ACTION)
 
-    dp.callback_query.register(admin_api.change_keywords_model, F.data == 'change_keywords_api', is_admin,
-                               StepsQuestionModel.GET_ACTION)
-    dp.message.register(admin_api.add_keywords_model, is_admin, StepsQuestionModel.GET_NEW_KEYWORDS)
-
     dp.callback_query.register(admin_api.handle_pagination, (F.data.startswith('page_')) | (F.data == 'cancel_action'))
