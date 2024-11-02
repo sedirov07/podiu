@@ -6,6 +6,11 @@ import torch.nn.functional as F
 
 class Model:
     def __init__(self, tokenizer=None, model=None):
+        if no tokenizer:
+            tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+        if not model:
+            model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+    
         self.tokenizer = tokenizer
         self.model = model
 
@@ -39,14 +44,14 @@ class Model:
 
 
 # Load model from HuggingFace Hub
-tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+# tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+# model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
 
-transformer = Model(tokenizer, model)
+# transformer = Model(tokenizer, model)
 
 # Sentences we want sentence embeddings for
-sentences = ['This is an example sentence', 'Each sentence is converted']
+# sentences = ['This is an example sentence', 'Each sentence is converted']
 
-print("Sentence embeddings:")
-similarity_score = transformer.get_similarity(sentences)
-print(similarity_score)
+# print("Sentence embeddings:")
+# similarity_score = transformer.get_similarity(sentences)
+# print(similarity_score)
