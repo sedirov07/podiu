@@ -55,7 +55,8 @@ class Search:
             
         self.last_chunk_id = last_chunk_id
     
-    async def add_chunk(self, chunk_id, question, answer):
+    async def add_chunk(self, question, answer):
+        chunk_id = self.last_chunk_id + 1
         embedding = await self.model.get_embedding(question)            
         metadata = {
             "question": question,
