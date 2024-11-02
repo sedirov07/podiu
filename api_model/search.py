@@ -67,7 +67,7 @@ class Search:
         doc = Document(page_content=answer, metadata=metadata)
         self.chunks.append(doc)
     
-    async def del_chunk(self, chunk_id):
+    async def delete_chunk(self, chunk_id):
         for i, chunk in enumerate(self.chunks):
             cur_chunk_id = chunk.metadata['chunk_id']
             if cur_chunk_id == chunk_id:
@@ -83,6 +83,9 @@ class Search:
             cur_chunk_id = chunk.metadata['chunk_id']
             if cur_chunk_id == chunk_id:
                 return self.chunks[i]
+    
+    async def get_all_chunks(self):
+        return self.chunks
     
     async def search_query(self, query, top_k=0, threshold_embed=0.5):
         query_embedding = await self.model.get_embedding(query)
