@@ -3,26 +3,23 @@ import json
 import models
 import asyncpg
 from fastapi import FastAPI
+from model import Model
+from search import Search
 from contextlib import asynccontextmanager
-from faq_tb import FAQTable, get_keywords, get_intersections_count, kw_model
 from config import setup_environment
 from logging_config import conf_logging
 
 # Настройка окружения
 setup_environment()
 
+# Настройка модели поиска
+model = Model()
+searcher = Search(model=model)
+
+
 # Получение переменных окружения
-DB_USER = os.environ["DB_USER"]
-DB_PASSWORD = os.environ["DB_PASSWORD"]
-DB_HOST = os.environ["DB_HOST"]
-DB_PORT = os.environ["DB_PORT"]
-DB_NAME = os.environ["DB_NAME"]
 API_HOST = os.environ["API_HOST"]
 API_PORT = int(os.environ["API_PORT"])
-
-
-async def create_pool():
-    return await asyncpg.create_pool(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
 
 
 app = FastAPI()
@@ -32,11 +29,10 @@ app = FastAPI()
 async def lifespan(app: FastAPI):
     conf_logging()
 
-    pool_connect = await create_pool()
-    data_base = FAQTable(pool_connect)
-    await data_base.init_insert()
+    # Создание эмбеддингов из существующей базы
+    await searcher.chunk_text_with_embeddings()
 
-    app.state.data_base = data_base
+    app.state.searcher = searcher
     yield
     await pool_connect.close()
 
@@ -51,62 +47,48 @@ async def read_root():
 
 @app.post("/answer")
 async def answer(question: models.TextToAnswer):
-    keyword = get_keywords(question.question, kw_model)
-    data_base = app.state.data_base
-
-    res = await data_base.get_answers()
-
-    keywords = list(map(lambda x: json.loads(x['keywords']), res))
-    possible_indexes = []
-
-    for i in range(len(keywords)):
-        counter = get_intersections_count(keyword, keywords[i])
-        if counter > 0:
-            possible_indexes.append((counter, i))
-
-    possible_indexes = sorted(possible_indexes, key=lambda x: x[0], reverse=True)
-    result = []
-
-    for index in possible_indexes:
-        result.append({'question': res[index[1]]['question'], 'answer': res[index[1]]['answer']})
-    if result:
-        return result[0]['answer']
-
+    searcher = app.state.searcher
+    result_doc = await searcher.search_query(question.question, top_k=1, threshold_embed=0.7)
+    if result_doc:
+        return result_doc[0].page_content
     return ''
 
 
 @app.post("/answer/add")
-async def add(question: models.NewQuestion):
-    data_base = app.state.data_base
-    await data_base.add_answer(question)
+async def add_chunk(question: models.NewQuestion):
+    searcher = app.state.searcher
+    await searcher.add_chunk(question.question, question.answer)
     return {"message": "ОК"}
 
 
 @app.get("/answer/all")
 async def all_answers():
-    data_base = app.state.data_base
-    res = await data_base.get_all_answers()
-    return res
+    searcher = app.state.searcher
+    chunks = await searcher.get_all_chunks()
+    results = []
+
+    for chunk in chunks:
+        res = {}
+        res['id'] = chunk.metadata['chunk_id']
+        res['question'] = chunk.metadata['question']
+        res['answer'] = chunk.page_content
+        results.append(res)
+    
+    return results
 
 
 @app.put("/answer/edit")
 async def edit(question: models.EditQuestion):
-    data_base = app.state.data_base
-    await data_base.edit_answer(question)
+    searcher = app.state.searcher
+    await searcher.edit_chunk(question.id, question.question, question.answer):
     return {"message": "ОК"}
 
-
-@app.put("/keywords/edit")
-async def kw_edit(question: models.EditKeywords):
-    data_base = app.state.data_base
-    await data_base.edit_keywords(question)
-    return {"message": "ОК"}
 
 
 @app.put("/answer/delete")
 async def delete(question: models.DeleteQuestion):
-    data_base = app.state.data_base
-    await data_base.delete_answer(question.id)
+    searcher = app.state.searcher
+    await searcher.delete_chunk(question.id)
     return {"message": "ОК"}
 
 
