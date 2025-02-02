@@ -23,7 +23,7 @@ class ApplicationsMiddleware(BaseMiddleware):
     async def load_applications(self):
         try:
             applications = await self.db.get_applications_awaiting_review()
-            if len(applications):
+            if len(applications) > 0:
                 for app in applications:
                     telegram_id = app['telegram_id']
                     last_name = app['last_name']

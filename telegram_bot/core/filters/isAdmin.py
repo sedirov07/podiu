@@ -11,15 +11,15 @@ class IsAdmin(BaseFilter):
     async def __call__(self, message: Message) -> bool:
         try:
             return message.from_user.id in self.admins_id
-        except:
+        except Exception:
             return False
 
     @classmethod
-    def add_admin(cls, admin_id):
+    async def add_admin(cls, admin_id):
         cls.admins_id.append(admin_id)
 
     @classmethod
-    def delete_admin(cls, admin_id):
+    async def delete_admin(cls, admin_id):
         for i in range(len(cls.admins_id)):
             if cls.admins_id[i] == admin_id:
                 cls.admins_id.pop(i)

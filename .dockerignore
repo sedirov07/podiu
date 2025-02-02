@@ -1,5 +1,6 @@
 .idea/
-data_applyes/
 __pycache__/
 venv/
 .gitignore
+.ipynb_checkpoints
+*.ipynb

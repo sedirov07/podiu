@@ -27,7 +27,7 @@ async def start_delete_admin(message: Message, admins_list):
 async def finish_delete_admin(call: CallbackQuery, admins_middleware: AdminsMiddleware, is_admin: IsAdmin):
     admin_id = call.data.split('_')[-1]
     await admins_middleware.del_admin(admin_id)
-    is_admin.delete_admin(admin_id)
+    await is_admin.delete_admin(admin_id)
 
     chat_id = call.message.chat.id
     message_id = call.message.message_id
@@ -49,7 +49,7 @@ async def finish_add_admin(message: Message, state: FSMContext, admins_middlewar
         full_name = first_name + last_name
 
         await admins_middleware.add_admin(user_id, full_name)
-        is_admin.add_admin(user_id)
+        await is_admin.add_admin(user_id)
 
         await message.answer(f"Пользователь {full_name} успешно добавлен в список администраторов!")
         await state.clear()

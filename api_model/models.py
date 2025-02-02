@@ -18,3 +18,10 @@ class EditQuestion(BaseModel):
 
 class DeleteQuestion(BaseModel):
     id: int
+
+class NewChunk(BaseModel):
+    text: str
+
+class EditChunk(BaseModel):
+    id: int
+    text: str

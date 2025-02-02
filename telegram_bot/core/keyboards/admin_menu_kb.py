@@ -14,9 +14,9 @@ admin_menu_keyboard = ReplyKeyboardMarkup(keyboard=[
         )
     ],
     [
-        KeyboardButton(
-            text='Список заявлений'
-        ),
+        # KeyboardButton(
+        #     text='Список заявлений'
+        # ),
         KeyboardButton(
             text='Управление персоналом'
         ),

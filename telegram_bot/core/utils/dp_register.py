@@ -38,6 +38,7 @@ DB_NAME = os.environ["DB_NAME"]
 
 
 async def create_pool():
+    # print(DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
     return await asyncpg.create_pool(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
 
 
@@ -47,11 +48,10 @@ async def dp_register(dp):
     admins_table = AdminsTable(pool_connect)
     admins_info = await admins_table.get_full_admins_info()
     applications_table = ApplicationsTable(pool_connect)
-
-    admins_id = [admin['user_id'] for admin in admins_info]
+    admins_id = [admin.get('user_id') for admin in admins_info]
 
     for admin_id in admins_id:
-        IsAdmin.add_admin(admin_id)
+        await IsAdmin.add_admin(admin_id)
 
     is_admin = IsAdmin()
     is_operator = IsOperator()
@@ -173,53 +173,53 @@ async def dp_register(dp):
                                F.data.startswith('operator_is_ready'), is_operator)
     dp.callback_query.register(basic.operator_not_ready, F.data.startswith('operator_is_not_ready'), is_operator)
 
-    dp.message.register(partial(apply.start_submit_apply, applications_middleware=applications_middleware),
-                        F.text.lower() == 'apply')
-    dp.message.register(apply.finish_consent, F.text == "❌ I don't agree", StepsApply.WAITING_FOR_CONSENT)
-    dp.message.register(apply.process_consent, F.text == "✅ I agree", StepsApply.WAITING_FOR_CONSENT)
-    dp.message.register(apply.process_personal_info, StepsApply.WAITING_FOR_PERSONAL_INFO)
-    dp.message.register(apply.process_passport_data, StepsApply.WAITING_FOR_PASSPORT)
-    dp.message.register(apply.process_ru_passport_data, StepsApply.WAITING_FOR_RU_PASSPORT)
-    dp.message.register(apply.process_visa_application_form_data, StepsApply.WAITING_FOR_VISA)
-    dp.message.register(apply.process_bank_statement_data, StepsApply.WAITING_FOR_BANK_STATEMENT)
-    dp.message.register(apply.process_application_type, F.text.in_(["For myself", "For another person"]),
-                        StepsApply.WAITING_FOR_TYPE)
-    dp.message.register(apply.process_agree_comments, StepsApply.WAITING_FOR_COMMENTS)
-    dp.message.register(partial(apply.finish_apply, applications_middleware=applications_middleware),
-                        F.text.in_(["✅ Yes", "❌ No"]), StepsApply.WAITING_FOR_APPLY)
-
-    dp.callback_query.register(partial(admin_apply_review.review_application,
-                                       applications_middleware=applications_middleware),
-                               F.data.startswith('review_application'), is_admin)
-    dp.callback_query.register(partial(admin_apply_review.review_application,
-                                       applications_middleware=applications_middleware),
-                               F.data.startswith('review_application'), is_operator)
-
-    dp.message.register(partial(admin_apply_review.approve_application,
-                                applications_middleware=applications_middleware), is_admin,
-                        StepsApproveApp.GET_APPROVE)
-    dp.message.register(partial(admin_apply_review.approve_application,
-                                applications_middleware=applications_middleware), is_operator,
-                        StepsApproveApp.GET_APPROVE)
-
-    dp.message.register(admin_apply_review.rejected_application, is_admin, StepsApproveApp.GET_REASON)
-    dp.message.register(admin_apply_review.rejected_application, is_operator, StepsApproveApp.GET_REASON)
-
-    dp.message.register(admin_apply_review.get_applications_list, is_admin, F.text == 'Список заявлений')
-    dp.message.register(admin_apply_review.get_applications_list, is_operator, F.text == 'Список заявлений')
-
-    dp.callback_query.register(admin_apply_review.modify_application, F.data.startswith('mod_app_'), is_admin)
-    dp.callback_query.register(admin_apply_review.modify_application, F.data.startswith('mod_app_'), is_operator)
-
-    dp.message.register(admin_apply_review.update_application, is_admin, StepsModifyApp.GET_NEW_VALUE)
-    dp.message.register(admin_apply_review.update_application, is_operator, StepsModifyApp.GET_NEW_VALUE)
-
-    dp.message.register(partial(admin_apply_review.process_update_application,
-                                applications_middleware=applications_middleware), is_admin,
-                        StepsModifyApp.GET_ANOTHER_NEW_VALUE)
-    dp.message.register(partial(admin_apply_review.process_update_application,
-                                applications_middleware=applications_middleware), is_operator,
-                        StepsModifyApp.GET_ANOTHER_NEW_VALUE)
+    # dp.message.register(partial(apply.start_submit_apply, applications_middleware=applications_middleware),
+    #                     F.text.lower() == 'apply')
+    # dp.message.register(apply.finish_consent, F.text == "❌ I don't agree", StepsApply.WAITING_FOR_CONSENT)
+    # dp.message.register(apply.process_consent, F.text == "✅ I agree", StepsApply.WAITING_FOR_CONSENT)
+    # dp.message.register(apply.process_personal_info, StepsApply.WAITING_FOR_PERSONAL_INFO)
+    # dp.message.register(apply.process_passport_data, StepsApply.WAITING_FOR_PASSPORT)
+    # dp.message.register(apply.process_ru_passport_data, StepsApply.WAITING_FOR_RU_PASSPORT)
+    # dp.message.register(apply.process_visa_application_form_data, StepsApply.WAITING_FOR_VISA)
+    # dp.message.register(apply.process_bank_statement_data, StepsApply.WAITING_FOR_BANK_STATEMENT)
+    # dp.message.register(apply.process_application_type, F.text.in_(["For myself", "For another person"]),
+    #                     StepsApply.WAITING_FOR_TYPE)
+    # dp.message.register(apply.process_agree_comments, StepsApply.WAITING_FOR_COMMENTS)
+    # dp.message.register(partial(apply.finish_apply, applications_middleware=applications_middleware),
+    #                     F.text.in_(["✅ Yes", "❌ No"]), StepsApply.WAITING_FOR_APPLY)
+    #
+    # dp.callback_query.register(partial(admin_apply_review.review_application,
+    #                                    applications_middleware=applications_middleware),
+    #                            F.data.startswith('review_application'), is_admin)
+    # dp.callback_query.register(partial(admin_apply_review.review_application,
+    #                                    applications_middleware=applications_middleware),
+    #                            F.data.startswith('review_application'), is_operator)
+    #
+    # dp.message.register(partial(admin_apply_review.approve_application,
+    #                             applications_middleware=applications_middleware), is_admin,
+    #                     StepsApproveApp.GET_APPROVE)
+    # dp.message.register(partial(admin_apply_review.approve_application,
+    #                             applications_middleware=applications_middleware), is_operator,
+    #                     StepsApproveApp.GET_APPROVE)
+    #
+    # dp.message.register(admin_apply_review.rejected_application, is_admin, StepsApproveApp.GET_REASON)
+    # dp.message.register(admin_apply_review.rejected_application, is_operator, StepsApproveApp.GET_REASON)
+    #
+    # dp.message.register(admin_apply_review.get_applications_list, is_admin, F.text == 'Список заявлений')
+    # dp.message.register(admin_apply_review.get_applications_list, is_operator, F.text == 'Список заявлений')
+    #
+    # dp.callback_query.register(admin_apply_review.modify_application, F.data.startswith('mod_app_'), is_admin)
+    # dp.callback_query.register(admin_apply_review.modify_application, F.data.startswith('mod_app_'), is_operator)
+    #
+    # dp.message.register(admin_apply_review.update_application, is_admin, StepsModifyApp.GET_NEW_VALUE)
+    # dp.message.register(admin_apply_review.update_application, is_operator, StepsModifyApp.GET_NEW_VALUE)
+    #
+    # dp.message.register(partial(admin_apply_review.process_update_application,
+    #                             applications_middleware=applications_middleware), is_admin,
+    #                     StepsModifyApp.GET_ANOTHER_NEW_VALUE)
+    # dp.message.register(partial(admin_apply_review.process_update_application,
+    #                             applications_middleware=applications_middleware), is_operator,
+    #                     StepsModifyApp.GET_ANOTHER_NEW_VALUE)
 
     dp.message.register(mailing.start_mailing, F.text.lower() == 'общая рассылка', is_admin)
     dp.message.register(mailing.get_text_for_mailing, is_admin, StepsMailing.GET_TEXT)

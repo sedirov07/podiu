@@ -13,7 +13,7 @@ API_PORT = os.environ.get("API_PORT")
 
 
 async def get_all_questions_api() -> list[dict]:
-    api = f"http://{API_HOST}:{API_PORT}/answer/all"
+    api = f"http://{API_HOST}:{API_PORT}/answer/all_answers"
     async with aiohttp.ClientSession() as session:
         async with session.get(api) as response:
             if response.status == 200:
@@ -56,6 +56,7 @@ async def handle_pagination(call: CallbackQuery):
 # Получение всех вопросов для выбора действия
 async def change_questions_model(message: Message, page: int = 1):
     questions_list = await get_all_questions_api()
+    print(questions_list)
     questions_kb = await create_paginated_keyboard(questions_list, page)
     await message.answer('Выберите вопрос:', reply_markup=questions_kb)
 

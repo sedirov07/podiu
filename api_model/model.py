@@ -1,53 +1,24 @@
-from transformers import AutoTokenizer, AutoModel
-from sklearn.metrics.pairwise import cosine_similarity
-import torch
-import torch.nn.functional as F
+from sentence_transformers import SentenceTransformer
 
 
 class Model:
-    def __init__(self, tokenizer=None, model=None):
-        if no tokenizer:
-            tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-        if not model:
-            model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-    
-        self.tokenizer = tokenizer
+    def __init__(self, model):
         self.model = model
 
-    def get_embedding(self, sentence):
-        def mean_pooling(model_output, attention_mask):
-            token_embeddings = model_output[0]
-            input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-            return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+    async def get_embedding(self, sentence):
+        embeddings = self.model.encode(sentence, convert_to_tensor=False)
+        return embeddings
 
-        # Tokenize sentence
-        encoded_input = self.tokenizer(sentence, padding=True, truncation=True, return_tensors='pt', max_length=512)
-
-        # Compute token embeddings
-        with torch.no_grad():
-            model_output = self.model(**encoded_input)
-
-        # Perform pooling
-        sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
-
-        # Normalize embeddings
-        sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
-
-        return sentence_embeddings
-
-    def get_similarity(self, sentences):
-        embedding1 = self.get_embedding(sentences[0])
-        embedding2 = self.get_embedding(sentences[1])
-        embedding1_np = embedding1.cpu().numpy()
-        embedding2_np = embedding2.cpu().numpy()
-        return cosine_similarity(embedding1_np, embedding2_np)[0][0]
+    @staticmethod
+    async def get_similarity(embedding1, embedding2):
+        sim_score = embedding1 @ embedding2.T
+        return sim_score
 
 
 # Load model from HuggingFace Hub
-# tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-# model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+model = SentenceTransformer("ai-forever/ru-en-RoSBERTa")
 
-# transformer = Model(tokenizer, model)
+embedder = Model(model=model)
 
 # Sentences we want sentence embeddings for
 # sentences = ['This is an example sentence', 'Each sentence is converted']

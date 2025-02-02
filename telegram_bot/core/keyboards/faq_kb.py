@@ -24,22 +24,22 @@ async def create_question_keyboard(faq_dict):
             [
                 InlineKeyboardButton(
                     text=question,
-                    callback_data=f'qu_{hash_string(question)}'
+                    callback_data=f'qu_{await hash_string(question)}'
                 )
             ] for question, answer in questions.items()
         ]
 
         keyboard_buttons.append([
             InlineKeyboardButton(
-                text='Contact with operator',
-                callback_data='contact_with_operator'
+                text='Send other question to Bot',
+                callback_data='send_other_question'
             )]
         )
 
         keyboard_buttons.append([
             InlineKeyboardButton(
-                text='Send other question',
-                callback_data='send_other_question'
+                text='Contact with operator',
+                callback_data='contact_with_operator'
             )]
         )
 

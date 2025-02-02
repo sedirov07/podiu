@@ -15,6 +15,7 @@ from core.middlewares.admins_middleware import AdminsMiddleware
 from core.keyboards.translate_kb import translate_faq_keyboard
 from core.keyboards.operator_chat_kb import operator_ready_kb
 from core.keyboards.faq_kb import contact_with_operator_keyboard
+from core.utils.split_md import split_text_with_markdown
 
 
 API_HOST = os.environ.get("API_HOST")
@@ -23,7 +24,7 @@ API_PORT = os.environ.get("API_PORT")
 
 # Функция для отправки текста на сервер API и получения ответа в виде строки
 async def send_text_to_api(text) -> str:
-    api = f"http://{API_HOST}:{API_PORT}/answer"
+    api = f"http://{API_HOST}:{API_PORT}/get_answer"
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(api, json={"question": text}) as response:
@@ -38,10 +39,6 @@ async def send_text_to_api(text) -> str:
                     return text
         except aiohttp.ClientError as e:
             print(f"Error: {e}")
-            return text
-        except Exception as e:
-            print(f"Error: {e}")
-            return text
 
 
 async def get_cancel(message: Message, state: FSMContext):
@@ -56,20 +53,20 @@ async def get_start(message: Message, user_language, state: FSMContext, language
     lang = user_language or user.language_code
     if not user_language:
         await language_middleware.add_language(user.id, lang)
-    await message.answer(translate_text('Hello! To communicate with the bot, You can use the most preferred'
-                                        'language for You!', 'en', f'{lang}'), reply_markup=menu_keyboard)
+    await message.answer(await translate_text('Hello! To communicate with the bot, You can use the most preferred'
+                                              'language for You!', 'en', f'{lang}'), reply_markup=menu_keyboard)
 
 
 async def change_lang(message: Message, state: FSMContext, user_language):
-    await message.answer(translate_text(f'Your language is: "{user_language}"\n'
-                                        f'To change: write something in your language', 'en',
-                                        user_language))
+    await message.answer(await translate_text(f'Your language is: "{user_language}"\n'
+                                              f'To change: write something in your language', 'en',
+                                              user_language))
     await state.set_state(StepsChangeLang.GET_LANG)
 
 
 async def get_lang(message: Message, state: FSMContext, language_middleware: LanguageMiddleware):
     lang = detect_language(message.text)
-    await message.answer(translate_text(f'Your language has been changed to "{lang}"', 'en', f'{lang}'),
+    await message.answer(await translate_text(f'Your language has been changed to "{lang}"', 'en', f'{lang}'),
                          reply_markup=menu_keyboard)
     await language_middleware.change_language(message.from_user.id, lang)
     await state.clear()
@@ -77,7 +74,7 @@ async def get_lang(message: Message, state: FSMContext, language_middleware: Lan
 
 async def get_topics_faq(message: Message, state: FSMContext, topics_keyboard, user_language):
     keyboard = await translate_faq_keyboard(topics_keyboard.inline_keyboard, 'topic', user_language)
-    await message.answer(translate_text("Choose a topic:", 'en', user_language), reply_markup=keyboard)
+    await message.answer(await translate_text("Choose a topic:", 'en', user_language), reply_markup=keyboard)
     chat_id = message.from_user.id
     await state.update_data(user_id=chat_id, user_language=user_language)
     await state.set_state(StepsChooseFaq.GET_TOPIC)
@@ -89,23 +86,26 @@ async def get_questions_faq(call: CallbackQuery, state: FSMContext, questions_ke
     topic = call.data.split('_')[-1]
     keyboard = await translate_faq_keyboard(questions_keyboard[topic].inline_keyboard, f'question_{topic}',
                                             user_language)
-    await call.message.edit_text(translate_text("Choose a question:", 'en', user_language),
+    await call.message.edit_text(await translate_text("Choose a question:", 'en', user_language),
                                  reply_markup=keyboard)
     await state.update_data(topic=topic)
     await state.set_state(StepsChooseFaq.GET_QUESTION)
 
 
 async def get_answer(message: Message, state: FSMContext, user_language):
-    question = translate_text(message.text, user_language, 'en')
+    question = await translate_text(message.text, user_language, 'en')
     answer = await send_text_to_api(question)
     if len(answer) == 0:
         answer = "The bot could not answer your question correctly!"
+    text = await translate_text_with_markdown_links(f'Answer from bot:\n{answer}\n'
+                                                    f'If you are not satisfied with the answer from the bot,'
+                                                    f'you can contact with the operator', 'en', user_language)
+    max_length = 4096  # Максимальная длина сообщения
+    parts = await split_text_with_markdown(text, max_length)
 
-    await message.answer(translate_text_with_markdown_links(f'Answer from bot:\n{answer}\n'
-                                                            f'If you are not satisfied with the answer from the bot,'
-                                                            f'you can contact with the operator', 'en', user_language),
-                         reply_markup=contact_with_operator_keyboard)
-    await state.clear()
+    for part in parts[:-1]:
+        await message.answer(part)
+    await message.answer(parts[-1], reply_markup=contact_with_operator_keyboard)
 
 
 async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_dict, admins_list, operators,
@@ -126,23 +126,23 @@ async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_
         if datetime.strptime('08:00', '%H:%M').time() <= current_time_ekb <= datetime.strptime('18:00', '%H:%M').time():
             first_name = call.from_user.first_name
             await state.update_data(first_name=first_name)
-            await call.message.edit_text(translate_text("We are looking for a free operator. Wait for it...", 'en',
-                                                        user_language))
+            await call.message.edit_text(await translate_text("We are looking for a free operator. Wait for it...", 'en',
+                                                              user_language))
             await contact_with_operator(bot, operators, first_name, user_id, admins_middleware, user_language)
         else:
-            await call.message.answer(translate_text("You can contact the operator only from 3:00 to 13:00 UTC",
-                                                     'en', user_language),
+            await call.message.answer(await translate_text("You can contact the operator only from 3:00 to 13:00 UTC",
+                                                           'en', user_language),
                                       reply_markup=menu_keyboard)
         await state.clear()
     elif data.get('reason'):
         await state.clear()
     elif call_data == ['send', 'other', 'question']:
-        await call.message.answer(translate_text("Write your question:", 'en', user_language))
+        await call.message.answer(await translate_text("Write your question:", 'en', user_language))
         await state.set_state(StepsChooseFaq.NO_ANSWER_IN_FAQ)
     else:
         question_hash = call_data[-1]
-        question = find_question_by_hash(faq_dict, topic, question_hash)
-        await call.message.edit_text(translate_text_with_markdown_links(faq_dict[topic][question], 'en', user_language))
+        question = await find_question_by_hash(faq_dict, topic, question_hash)
+        await call.message.edit_text(await translate_text_with_markdown_links(faq_dict[topic][question], 'en', user_language))
         if 'Where is Ekaterinburg?' == question:
             latitude = 56.838011
             longitude = 60.597474
@@ -150,7 +150,7 @@ async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_
         if user_id in [admin['user_id'] for admin in admins_list]:
             await call.message.answer('Меню:', reply_markup=admin_menu_keyboard)
         else:
-            await call.message.answer(translate_text('Menu:', 'en', user_language), reply_markup=menu_keyboard)
+            await call.message.answer(await translate_text('Menu:', 'en', user_language), reply_markup=menu_keyboard)
 
         await state.clear()
 
@@ -196,6 +196,6 @@ async def send_contact(bot, operators, operator_id, user_id, user_language):
     operator_contact = operator['contact']
     phone = operator_contact.phone_number
     first_name = operator_contact.first_name
-    await bot.send_message(user_id, translate_text(f'The operator is contact {operator_full_name} has been sent to you'
-                                                   f'to discuss your questions:', 'en', user_language))
+    await bot.send_message(user_id, await translate_text(f'The operator is contact {operator_full_name} has been sent to you'
+                                                         f'to discuss your questions:', 'en', user_language))
     await bot.send_contact(user_id, phone_number=phone, first_name=first_name)

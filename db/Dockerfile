@@ -4,7 +4,7 @@ FROM postgres:13
 # Устанавливаем переменные окружения для базы данных
 ENV POSTGRES_DB=podiu
 ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=25092001
+ENV POSTGRES_PASSWORD=postgres
 
 # Копируем файл инициализации в директорию Docker образа
 COPY init.sql /docker-entrypoint-initdb.d/

@@ -1,4 +1,4 @@
-def sanitize_text(text):
+async def sanitize_text(text):
     """
     Sanitize text to escape special characters and ensure proper formatting for Telegram.
     """

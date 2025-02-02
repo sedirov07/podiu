@@ -4,7 +4,7 @@ import asyncio
 import requests
 import markdown
 import pytz
-from exchangelib import Credentials, Account, Message, DELEGATE, HTMLBody
+from exchangelib import Credentials, Account, Message, DELEGATE, HTMLBody, Configuration
 from datetime import datetime, timedelta
 from config import setup_environment
 
@@ -19,12 +19,13 @@ API_HOST = os.environ["API_HOST"]
 API_PORT = os.environ["API_PORT"]
 
 credentials = Credentials(OUTLOOK_LOGIN, OUTLOOK_PASSWORD)
-account = Account(OUTLOOK_LOGIN, credentials=credentials, autodiscover=True, access_type=DELEGATE)
+config = Configuration(server='outlook.office365.com', credentials=credentials)
+account = Account(primary_smtp_address=OUTLOOK_LOGIN, config=config, autodiscover=False, access_type=DELEGATE)
 
 
 # Функция для отправки текста на сервер API и получения ответа
 async def send_text_to_api(text):
-    api_url = f"http://{API_HOST}:{API_PORT}/answer"
+    api_url = f"http://{API_HOST}:{API_PORT}/get_answer"
     response = requests.post(api_url, json={"question": text})
     if response.status_code == 200:
         text = response.text.replace('"', '').replace(r'\n', '<br>')

@@ -21,7 +21,7 @@ async def review_application(call: CallbackQuery, bot: Bot, state: FSMContext,
     user_id = int(call_data[-2])
     user_lang = call_data[-1]
     text, pdf, jpg = await applications_middleware.get_applications(user_id)
-    text = {k: sanitize_text(v) if isinstance(v, str) else v for k, v in text.items()}
+    text = {k: await sanitize_text(v) if isinstance(v, str) else v for k, v in text.items()}
 
     if text or pdf or jpg:
         full_text = '\n'.join([f'*{key}:* {value}' for key, value in text.items()
@@ -57,7 +57,7 @@ async def approve_application(message: Message, applications_middleware: Applica
         # Отправка заявления в CMS БД!!!
         await applications_middleware.del_application(user_id)
         await applications_middleware.update_status(user_id, 'approved')
-        await bot.send_message(user_id, translate_text('Your application has been approved!', 'en', user_lang))
+        await bot.send_message(user_id, await translate_text('Your application has been approved!', 'en', user_lang))
         await message.answer('Заявление одобрено, заявитель уведомлен!', reply_markup=admin_menu_keyboard)
         await state.clear()
     elif approve == 'Редактировать заявление':
@@ -80,8 +80,8 @@ async def rejected_application(message: Message, bot: Bot, state: FSMContext):
     full_name = message.from_user.full_name
     await message.answer('Заявление было отклонено.')
     await bot.send_message(user_id,
-                           translate_text(f'Ваше заявление было отклонено оператором {full_name} по причине:\n{reason}',
-                                          'ru', user_lang))
+                           await translate_text(f'Ваше заявление было отклонено оператором {full_name} по причине:\n{reason}',
+                                                'ru', user_lang))
     await state.clear()
 
 
@@ -146,12 +146,12 @@ async def process_update_application(message: Message, bot: Bot, applications_mi
     elif message.text == 'Нет':
         if old_value_dict['status'] == 'approved':
             await applications_middleware.del_application(user_id)
-            await bot.send_message(user_id, translate_text('Your application has been approved!', 'en', user_lang))
+            await bot.send_message(user_id, await translate_text('Your application has been approved!', 'en', user_lang))
             await applications_middleware.update_columns_by_dict(old_value_dict, user_id)
             await message.answer('Заявление успешно изменено и одобрено! Заявитель был уведомлен.',
                                  reply_markup=admin_menu_keyboard)
         else:
-            await bot.send_message(user_id, translate_text('Your application has been changed!', 'en', user_lang))
+            await bot.send_message(user_id, await translate_text('Your application has been changed!', 'en', user_lang))
             await applications_middleware.update_columns_by_dict(old_value_dict, user_id)
             await message.answer('Заявление успешно изменено!',
                                  reply_markup=admin_menu_keyboard)

@@ -29,8 +29,8 @@ async def finish_mailing(message: Message, bot: Bot, state: FSMContext, language
         users_languages = await language_middleware.get_users_languages()
         counter = 0
         for user_id, language in users_languages.items():
-            await bot.send_message(user_id, translate_text(f'General mailing of messages from {first_name}:\n'
-                                                           f'{mail_message}', 'en', language))
+            await bot.send_message(user_id, await translate_text(f'General mailing of messages from {first_name}:\n'
+                                                                 f'{mail_message}', 'en', language))
             counter += 1
         await message.answer(f'Рассылка окончена! Количество отправленных сообщений: {counter}')
     else:

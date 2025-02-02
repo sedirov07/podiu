@@ -131,7 +131,7 @@ async def get_question_to_change(call: CallbackQuery, faq_dict, state: FSMContex
     topic = data['topic']
     call_data = call.data.split('_')
     question_hash = call_data[-1]
-    question = find_question_by_hash(faq_dict, topic, question_hash)
+    question = await find_question_by_hash(faq_dict, topic, question_hash)
     answer = faq_dict[topic][question]
     await state.update_data(question=question, answer=answer, new_question=question, new_answer=answer)
     await call.message.edit_text('Выберите действие: ', reply_markup=admin_actions_questions_keyboard)

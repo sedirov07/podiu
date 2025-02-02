@@ -6,13 +6,13 @@ translated_topics_keyboards = {}
 translated_questions_keyboards = {}
 
 
-def translate_kb(inline_keyboard, target_language):
+async def translate_kb(inline_keyboard, target_language):
     translated_keyboard = []
 
     for row in inline_keyboard:
         translated_row = []
         for button in row:
-            translated_text = translate_text(button.text, 'en', target_language)
+            translated_text = await translate_text(button.text, 'en', target_language)
             translated_button = InlineKeyboardButton(text=translated_text, callback_data=button.callback_data)
             translated_row.append(translated_button)
         translated_keyboard.append(translated_row)
@@ -25,7 +25,7 @@ async def translate_faq_keyboard(inline_keyboard, level, target_language):
         if target_language in translated_topics_keyboards:
             return translated_topics_keyboards[target_language]
 
-        translated_topic_keyboard = translate_kb(inline_keyboard, target_language)
+        translated_topic_keyboard = await translate_kb(inline_keyboard, target_language)
         translated_topics_keyboards[target_language] = translated_topic_keyboard
         return translated_topic_keyboard
 
@@ -36,7 +36,7 @@ async def translate_faq_keyboard(inline_keyboard, level, target_language):
         if topic in translated_questions_keyboards[target_language]:
             return translated_questions_keyboards[target_language][topic]
 
-        translated_question_keyboard = translate_kb(inline_keyboard, target_language)
+        translated_question_keyboard = await translate_kb(inline_keyboard, target_language)
         translated_questions_keyboards[target_language][topic] = translated_question_keyboard
         return translated_question_keyboard
 

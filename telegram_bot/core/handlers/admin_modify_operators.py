@@ -19,7 +19,7 @@ async def start_delete_operator(message: Message, operators):
 async def finish_delete_operator(call: CallbackQuery, admins_middleware: AdminsMiddleware, is_operator: IsOperator):
     operator_id = int(call.data.split('_')[-1])
     await admins_middleware.del_operator(operator_id)
-    is_operator.delete_operator(operator_id)
+    await is_operator.delete_operator(operator_id)
 
     chat_id = call.message.chat.id
     message_id = call.message.message_id
@@ -47,7 +47,7 @@ async def finish_add_operator(message: Message, state: FSMContext, admins_middle
         else:
             full_name = first_name + " " + last_name
             await admins_middleware.add_operator(user_id, first_name, last_name, message.contact)
-            is_operator.add_operator(user_id)
+            await is_operator.add_operator(user_id)
 
             await message.answer(f"Пользователь {full_name} успешно добавлен в список операторов!",
                                  reply_markup=admin_menu_keyboard)
@@ -67,7 +67,7 @@ async def get_last_name_operator(message: Message, state: FSMContext, admins_mid
     contact = data['contact']
 
     await admins_middleware.add_operator(user_id, first_name, last_name, contact)
-    is_operator.add_operator(user_id)
+    await is_operator.add_operator(user_id)
 
     await message.answer(f"Пользователь {full_name} успешно добавлен в список операторов!",
                          reply_markup=admin_menu_keyboard)
