@@ -1,0 +1,11 @@
+BOT_TOKEN=
+YANDEX_API_KEY=
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+DB_NAME=podiu
+FOLDER_ID=
+API_OCR=acdefghijk
+TG_API_HOST=api_model
+TG_API_PORT=8082
