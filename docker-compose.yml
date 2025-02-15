@@ -21,7 +21,7 @@ services:
 #    build:
 #      context: ./outlook_bot
 #    depends_on:
-3      - db
+#      - db
 #      - api_model
 
   telegram_bot:
