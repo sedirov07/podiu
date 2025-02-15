@@ -13,8 +13,8 @@ from logging_config import conf_logging
 setup_environment()
 
 # Получение переменных окружения
-API_HOST = os.environ["API_HOST"]
-API_PORT = int(os.environ["API_PORT"])
+API_HOST = os.environ["API_MODEL_API_HOST"]
+API_PORT = int(os.environ["API_MODEL_API_PORT"])
 AUTH_KEY = os.environ["AUTH_KEY"]
 SCOPE = os.environ["SCOPE"]
 MODEL_NAME = os.environ["MODEL_NAME"]

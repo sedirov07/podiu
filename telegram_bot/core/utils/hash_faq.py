@@ -15,7 +15,7 @@ async def hash_string(input_string):
 
 
 async def find_question_by_hash(faq_dict, topic, hash_to_find):
-    for question, answer in faq_dict[topic].items():
+    for question, answer_date in faq_dict[topic].items():
         calculated_hash = hashlib.sha1(question.encode()).hexdigest()
         if calculated_hash == hash_to_find:
             return question

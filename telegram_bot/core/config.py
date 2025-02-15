@@ -17,5 +17,5 @@ def setup_environment():
     os.environ["YANDEX_API_KEY"] = get_config("YANDEX_API_KEY")
     os.environ["FOLDER_ID"] = get_config("FOLDER_ID")
     os.environ["API_OCR"] = get_config("API_OCR")
-    os.environ["API_HOST"] = get_config("API_HOST")
-    os.environ["API_PORT"] = get_config("API_PORT")
+    os.environ["TG_API_HOST"] = get_config("TG_API_HOST")
+    os.environ["TG_API_PORT"] = get_config("TG_API_PORT")

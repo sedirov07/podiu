@@ -4,6 +4,7 @@ from core.utils.states_change_lang import StepsChangeLang
 from core.utils.states_choose_faq import StepsChooseFaq
 from core.utils.states_change_topic import StepsChangeTopic, StepsAddTopic
 from core.utils.states_change_question import StepsChangeQuestion, StepsAddQuestion
+from core.utils.states_change_documents import StepsAddDocument
 from core.utils.states_approve_app import StepsApproveApp
 from core.utils.states_submit_apply import StepsApply
 from core.utils.states_mailing import StepsMailing
@@ -135,6 +136,35 @@ async def dp_register(dp):
                         StepsChangeQuestion.GET_NEW_QUESTION)
     dp.message.register(partial(admin_change_faq.rename_answer, faq_middleware=faq_middleware), is_operator,
                         StepsChangeQuestion.GET_NEW_ANSWER)
+    # Удаление документов
+    dp.callback_query.register(admin_change_faq.start_delete_document, F.data == 'delete_answer_documents',
+                               is_admin)
+    dp.callback_query.register(admin_change_faq.choose_document, F.data.startswith('doc_qa_id_'), is_admin)
+    dp.callback_query.register(partial(admin_change_faq.delete_document, faq_middleware=faq_middleware),
+                               F.data.startswith('doc_id_'), is_admin)
+
+    dp.callback_query.register(admin_change_faq.start_delete_document, F.data == 'delete_answer_documents',
+                               is_operator)
+    dp.callback_query.register(admin_change_faq.choose_document, F.data.startswith('doc_qa_id_'), is_operator)
+    dp.callback_query.register(partial(admin_change_faq.delete_document, faq_middleware=faq_middleware),
+                               F.data.startswith('doc_id_'), is_operator)
+
+    # Добавление документов
+    dp.callback_query.register(admin_change_faq.start_add_document, F.data == 'add_answer_documents',
+                               is_admin)
+    dp.callback_query.register(admin_change_faq.get_topic_of_question_to_add_document, is_admin,
+                               StepsAddDocument.GET_TOPIC)
+    dp.callback_query.register(admin_change_faq.get_question_to_add_document, is_admin, StepsAddDocument.GET_QUESTION)
+    dp.message.register(partial(admin_change_faq.get_document_to_add, faq_middleware=faq_middleware),
+                        is_admin, StepsAddDocument.GET_DOCUMENT, F.document)
+
+    dp.callback_query.register(admin_change_faq.start_add_document, F.data == 'add_answer_documents',
+                               is_operator)
+    dp.callback_query.register(admin_change_faq.get_topic_of_question_to_add_document, is_operator,
+                               StepsAddDocument.GET_TOPIC)
+    dp.callback_query.register(admin_change_faq.get_question_to_add_document, is_operator, StepsAddDocument.GET_QUESTION)
+    dp.message.register(partial(admin_change_faq.get_document_to_add, faq_middleware=faq_middleware),
+                        is_operator, StepsAddDocument.GET_DOCUMENT, F.document)
 
     dp.message.register(admin_modify_admin_list.manage, F.text.lower() == 'управление персоналом', is_admin)
     dp.message.register(admin_modify_admin_list.start_delete_admin, F.text.lower() == 'удалить администратора',
@@ -244,3 +274,7 @@ async def dp_register(dp):
                                StepsQuestionModel.GET_ACTION)
 
     dp.callback_query.register(admin_api.handle_pagination, (F.data.startswith('page_')) | (F.data == 'cancel_action'))
+    dp.callback_query.register(admin_change_faq.handle_pagination_faq,
+                               (F.data.startswith('qa_doc_page_')) | (F.data == 'qa_doc_cancel_action'))
+    dp.callback_query.register(admin_change_faq.handle_pagination_doc,
+                               (F.data.startswith('doc_page_')) | (F.data == 'doc_cancel_action'))

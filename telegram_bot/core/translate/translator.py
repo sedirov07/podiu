@@ -102,4 +102,32 @@ async def translate_text_with_markdown_links(text, source_language, target_langu
         # Заменяем оригинальную гиперссылку на переведенную в тексте
         translated_text = translated_text.replace(f'[{link_text}]({url})', translated_link)
 
+    translated_text = await fix_unclosed_markdown_tags(translated_text)
+
     return translated_text
+
+
+async def fix_unclosed_markdown_tags(text):
+    # Регулярные выражения для поиска незакрытых тегов
+    patterns = [
+        (r'\*\*([^*]+)', r'**\1**'),  # Незакрытый **
+        (r'__([^_]+)', r'__\1__'),    # Незакрытый __
+        (r'\*([^*]+)', r'*\1*'),      # Незакрытый *
+        (r'_([^_]+)', r'_\1_'),       # Незакрытый _
+    ]
+
+    # Применяем каждое регулярное выражение для поиска и исправления
+    for pattern, replacement in patterns:
+        text = re.sub(pattern, replacement, text)
+
+    # Разделяем текст на строки и проверяем каждую строку на наличие незакрытых тегов
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        # Проверяем количество открытых и закрытых тегов
+        for tag in ['**', '__', '*', '_']:
+            open_count = line.count(tag)
+            if open_count % 2 != 0:  # Если количество тегов нечетное
+                lines[i] += tag  # Закрываем тег
+
+    # Собираем текст обратно
+    return '\n'.join(lines)

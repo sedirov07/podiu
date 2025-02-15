@@ -15,14 +15,16 @@ class FAQMiddleware(BaseMiddleware):
         self.faq_dict = None
         self.topics_keyboard = None
         self.questions_keyboard = None
+        self.questions_and_paths = None
 
     async def load_faq_dict(self):
-        try:
-            self.faq_dict = await self.db.get_faq_dict()
-            self.topics_keyboard = await create_topic_keyboard(self.faq_dict)
-            self.questions_keyboard = await create_question_keyboard(self.faq_dict)
-        except Exception as e:
-            logging.error(f"An error occurred while loading FAQ data: {e}")
+        # try:
+        self.faq_dict = await self.db.get_faq_dict()
+        self.topics_keyboard = await create_topic_keyboard(self.faq_dict)
+        self.questions_keyboard = await create_question_keyboard(self.faq_dict)
+        self.questions_and_paths = await self.db.get_questions_and_paths()
+        # except Exception as e:
+        #     logging.error(f"An error occurred while loading FAQ data: {e}")
 
     async def add_topic(self, topic):
         await self.db.add_topic(topic)
@@ -42,6 +44,12 @@ class FAQMiddleware(BaseMiddleware):
     async def change_question(self, topic, question, new_question, new_answer):
         await self.db.change_question(topic, question, new_question, new_answer)
 
+    async def del_document(self, doc_id):
+        await self.db.delete_document(doc_id)
+
+    async def add_document(self, question, doc_name, doc_path):
+        await self.db.add_document(question, doc_name, doc_path)
+
     async def __call__(
             self,
             handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
@@ -52,5 +60,6 @@ class FAQMiddleware(BaseMiddleware):
         data['topics_keyboard'] = self.topics_keyboard
         data['questions_keyboard'] = self.questions_keyboard
         data['faq_dict'] = self.faq_dict
+        data['questions_and_paths'] = self.questions_and_paths
 
         return await handler(event, data)

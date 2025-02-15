@@ -2,32 +2,21 @@ from core.utils.hash_faq import hash_string
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-# Создание клавиатуры для списка тем
-async def create_topic_keyboard(faq_dict):
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text=topic,
-                callback_data=f'topic_{topic}'
-            )
-        ] for topic, questions in faq_dict.items()
-    ])
-
-    return keyboard
-
-
 # Создание клавиатуры для списка вопросов
 async def create_question_keyboard(faq_dict):
     keyboards = {}
     for topic, questions in faq_dict.items():
-        keyboard_buttons = [
-            [
+        keyboard_buttons = []
+
+        for question, answer_data in questions.items():
+            # answer_text = answer_data['answer']
+
+            keyboard_buttons.append([
                 InlineKeyboardButton(
                     text=question,
                     callback_data=f'qu_{await hash_string(question)}'
-                )
-            ] for question, answer in questions.items()
-        ]
+                )]
+            )
 
         keyboard_buttons.append([
             InlineKeyboardButton(
@@ -58,3 +47,17 @@ contact_with_operator_keyboard = InlineKeyboardMarkup(inline_keyboard=
         ]
     ]
 )
+
+
+# Создание клавиатуры для списка тем
+async def create_topic_keyboard(faq_dict):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=topic,
+                callback_data=f'topic_{topic}'
+            )
+        ] for topic, questions in faq_dict.items()
+    ])
+
+    return keyboard

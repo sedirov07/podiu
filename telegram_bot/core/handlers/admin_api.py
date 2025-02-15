@@ -8,8 +8,8 @@ from core.keyboards.admin_api_kb import questions_actions_keyboard, create_pagin
 from core.translate.translator import del_translation_text
 
 
-API_HOST = os.environ.get("API_HOST")
-API_PORT = os.environ.get("API_PORT")
+API_HOST = os.environ.get("TG_API_HOST")
+API_PORT = os.environ.get("TG_API_PORT")
 
 
 async def get_all_questions_api() -> list[dict]:
@@ -56,12 +56,11 @@ async def handle_pagination(call: CallbackQuery):
 # Получение всех вопросов для выбора действия
 async def change_questions_model(message: Message, page: int = 1):
     questions_list = await get_all_questions_api()
-    print(questions_list)
     questions_kb = await create_paginated_keyboard(questions_list, page)
     await message.answer('Выберите вопрос:', reply_markup=questions_kb)
 
 
-# Получение возможных действи с вопросами
+# Получение возможных действий с вопросами
 async def get_question_action_model(call: CallbackQuery, state: FSMContext):
     q_id = int(call.data.split('_')[-1])
     questions = await get_all_questions_api()

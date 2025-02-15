@@ -49,17 +49,6 @@ ALTER TABLE public.questions_answers OWNER TO postgres;
 --
 -- Name: questions_answers; Type: TABLE; Schema: public; Owner: postgres
 --
-
-CREATE TABLE public.questions_answers_kw (
-    id SERIAL PRIMARY KEY,
-    question TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    keywords text NOT NULL
-);
-
-
-ALTER TABLE public.questions_answers_kw OWNER TO postgres;
-
 --
 -- Name: questions_answers_qa_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -316,3 +305,20 @@ ALTER TABLE ONLY public.users_lang
 
 ALTER TABLE ONLY public.questions_answers
     ADD CONSTRAINT questions_answers_topic_id_fkey FOREIGN KEY (topic_id) REFERENCES public.topics(topic_id);
+
+CREATE TABLE IF NOT EXISTS public.questions_files
+(
+    file_id SERIAL PRIMARY KEY,
+    qa_id integer,
+    file_name text COLLATE pg_catalog."default" NOT NULL,
+    file_path text COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT questions_files_qa_id_fkey FOREIGN KEY (qa_id)
+        REFERENCES public.questions_answers (qa_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
+);
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public.questions_files
+    OWNER to postgres;

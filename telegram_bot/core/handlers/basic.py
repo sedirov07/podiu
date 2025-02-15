@@ -2,7 +2,7 @@ import os
 import aiohttp
 from datetime import datetime, timedelta, timezone
 from aiogram import Bot
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 from core.keyboards.menu_kb import menu_keyboard
 from core.keyboards.admin_menu_kb import admin_menu_keyboard
@@ -18,8 +18,8 @@ from core.keyboards.faq_kb import contact_with_operator_keyboard
 from core.utils.split_md import split_text_with_markdown
 
 
-API_HOST = os.environ.get("API_HOST")
-API_PORT = os.environ.get("API_PORT")
+API_HOST = os.environ.get("TG_API_HOST")
+API_PORT = os.environ.get("TG_API_PORT")
 
 
 # Функция для отправки текста на сервер API и получения ответа в виде строки
@@ -86,8 +86,7 @@ async def get_questions_faq(call: CallbackQuery, state: FSMContext, questions_ke
     topic = call.data.split('_')[-1]
     keyboard = await translate_faq_keyboard(questions_keyboard[topic].inline_keyboard, f'question_{topic}',
                                             user_language)
-    await call.message.edit_text(await translate_text("Choose a question:", 'en', user_language),
-                                 reply_markup=keyboard)
+    await call.message.edit_text(await translate_text("Choose a question:", 'en', user_language), reply_markup=keyboard)
     await state.update_data(topic=topic)
     await state.set_state(StepsChooseFaq.GET_QUESTION)
 
@@ -142,11 +141,28 @@ async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_
     else:
         question_hash = call_data[-1]
         question = await find_question_by_hash(faq_dict, topic, question_hash)
-        await call.message.edit_text(await translate_text_with_markdown_links(faq_dict[topic][question], 'en', user_language))
+
+        answer_data = faq_dict[topic][question]
+        answer_text = answer_data['answer']
+        answer_paths = answer_data['file_paths']
+
+        await call.message.edit_text(await translate_text_with_markdown_links(answer_text, 'en', user_language))
+
         if 'Where is Ekaterinburg?' == question:
             latitude = 56.838011
             longitude = 60.597474
             await bot.send_location(user_id, latitude, longitude)
+        if answer_paths and not (len(answer_paths) == 1 and answer_paths[0] is None):
+            for file_path in answer_paths:
+                if os.path.exists(file_path):
+                    file = FSInputFile(file_path)
+                    file_name = os.path.basename(file_path).replace('_', ' ')
+                    file_name_lang = await detect_language(file_name)
+                    new_file_name = await translate_text(file_name, file_name_lang, user_language)
+                    await call.message.answer_document(file, caption=new_file_name, parse_mode='HTML')
+                else:
+                    print(f"Файл {file_path} не найден.")
+
         if user_id in [admin['user_id'] for admin in admins_list]:
             await call.message.answer('Меню:', reply_markup=admin_menu_keyboard)
         else:
