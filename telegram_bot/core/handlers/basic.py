@@ -65,7 +65,7 @@ async def change_lang(message: Message, state: FSMContext, user_language):
 
 
 async def get_lang(message: Message, state: FSMContext, language_middleware: LanguageMiddleware):
-    lang = detect_language(message.text)
+    lang = await detect_language(message.text)
     await message.answer(await translate_text(f'Your language has been changed to "{lang}"', 'en', f'{lang}'),
                          reply_markup=menu_keyboard)
     await language_middleware.change_language(message.from_user.id, lang)
@@ -96,14 +96,19 @@ async def get_answer(message: Message, state: FSMContext, user_language):
     answer = await send_text_to_api(question)
     if len(answer) == 0:
         answer = "The bot could not answer your question correctly!"
+    answer = answer
+
     text = await translate_text_with_markdown_links(f'Answer from bot:\n{answer}\n'
                                                     f'If you are not satisfied with the answer from the bot,'
-                                                    f'you can contact with the operator', 'en', user_language)
+                                                    f'you can contact with the operator', 'en', user_language, False)
+    text = (text.replace('\\п', '\n').replace('\\П', '\n').replace('\\\\n', '\n').replace('\\n', '\n')
+            .replace('\n', ' \n').replace('\n ', '\n').replace('**', '*').replace('__', '_'))
     max_length = 4096  # Максимальная длина сообщения
     parts = await split_text_with_markdown(text, max_length)
 
     for part in parts[:-1]:
         await message.answer(part)
+
     await message.answer(parts[-1], reply_markup=contact_with_operator_keyboard)
 
 
@@ -145,7 +150,6 @@ async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_
         answer_data = faq_dict[topic][question]
         answer_text = answer_data['answer']
         answer_paths = answer_data['file_paths']
-
         await call.message.edit_text(await translate_text_with_markdown_links(answer_text, 'en', user_language))
 
         if 'Where is Ekaterinburg?' == question:

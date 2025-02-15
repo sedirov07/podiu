@@ -7,5 +7,5 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 
 storage = MemoryStorage()
-bot = Bot(token=BOT_TOKEN, parse_mode='MARKDOWN')
+bot = Bot(token=BOT_TOKEN, parse_mode='Markdown')
 dp = Dispatcher(storage=storage)

@@ -317,8 +317,3 @@ CREATE TABLE IF NOT EXISTS public.questions_files
         ON UPDATE NO ACTION
         ON DELETE CASCADE
 );
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.questions_files
-    OWNER to postgres;

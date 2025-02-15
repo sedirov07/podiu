@@ -87,7 +87,7 @@ async def detect_language(text):
             return text
 
 
-async def translate_text_with_markdown_links(text, source_language, target_language):
+async def translate_text_with_markdown_links(text, source_language, target_language, flg=True):
     # Перевести весь текст, включая текст гиперссылок
     translated_text = await translate_text(text, source_language, target_language)
 
@@ -99,10 +99,16 @@ async def translate_text_with_markdown_links(text, source_language, target_langu
     for link_text, url in matches:
         translated_link_text = await translate_text(link_text, source_language, target_language)
         translated_link = f'[{translated_link_text}]({url})'
-        # Заменяем оригинальную гиперссылку на переведенную в тексте
-        translated_text = translated_text.replace(f'[{link_text}]({url})', translated_link)
+        # Заменяем все вхождения оригинальной гиперссылки на переведенную
+        translated_text = re.sub(
+            re.escape(f'[{link_text}]({url})'),
+            translated_link,
+            translated_text
+        )
 
-    translated_text = await fix_unclosed_markdown_tags(translated_text)
+    # Исправляем незакрытые Markdown-теги
+    if flg:
+        translated_text = await fix_unclosed_markdown_tags(translated_text)
 
     return translated_text
 
