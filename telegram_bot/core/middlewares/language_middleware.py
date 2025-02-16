@@ -10,7 +10,7 @@ conf_logging()
 
 
 class LanguageMiddleware(BaseMiddleware):
-    def __init__(self, db, max_cache_size=1000):
+    def __init__(self, db, max_cache_size=10000):
         self.db = db
         self.max_cache_size = max_cache_size
         self.user_languages = {}
@@ -46,12 +46,12 @@ class LanguageMiddleware(BaseMiddleware):
 
         if event.text and not event.text.startswith('/'):
             if not user_language:
-                user_language = detect_language(event.text)
+                user_language = await detect_language(event.text)
                 await self.db.add_user(user_id, user_language)
                 self.user_languages[user_id] = user_language
                 logging.info(f"Added user {user_id} with language {user_language}")
-            else:
-                logging.info(f"User {user_id} already exists with language {user_language}")
+            # else:
+            #     logging.info(f"User {user_id} already exists with language {user_language}")
 
         data['user_language'] = user_language if user_language else None
 

@@ -87,7 +87,7 @@ async def detect_language(text):
             return text
 
 
-async def translate_text_with_markdown_links(text, source_language, target_language, flg=True):
+async def translate_text_with_markdown_links(text, source_language, target_language):
     # Перевести весь текст, включая текст гиперссылок
     translated_text = await translate_text(text, source_language, target_language)
 
@@ -107,33 +107,72 @@ async def translate_text_with_markdown_links(text, source_language, target_langu
         )
 
     # Исправляем незакрытые Markdown-теги
-    if flg:
-        translated_text = await fix_unclosed_markdown_tags(translated_text)
+    translated_text = await fix_unclosed_markdown_tags(translated_text)
 
     return translated_text
 
 
 async def fix_unclosed_markdown_tags(text):
-    # Регулярные выражения для поиска незакрытых тегов
-    patterns = [
-        (r'\*\*([^*]+)', r'**\1**'),  # Незакрытый **
-        (r'__([^_]+)', r'__\1__'),    # Незакрытый __
-        (r'\*([^*]+)', r'*\1*'),      # Незакрытый *
-        (r'_([^_]+)', r'_\1_'),       # Незакрытый _
-    ]
+    # # Регулярные выражения для поиска незакрытых тегов
+    # patterns = [
+    #     (r'\*\*([^*]+)', r'**\1**'),  # Незакрытый **
+    #     (r'__([^_]+)', r'__\1__'),    # Незакрытый __
+    #     (r'\*([^*]+)', r'*\1*'),      # Незакрытый *
+    #     (r'_([^_]+)', r'_\1_'),       # Незакрытый _
+    # ]
+    #
+    # # Применяем каждое регулярное выражение для поиска и исправления
+    # for pattern, replacement in patterns:
+    #     text = re.sub(pattern, replacement, text)
+    #
+    # # Разделяем текст на строки и проверяем каждую строку на наличие незакрытых тегов
+    # lines = text.split('\n')
+    # for i, line in enumerate(lines):
+    #     # Проверяем количество открытых и закрытых тегов
+    #     for tag in ['**', '__', '*', '_']:
+    #         open_count = line.count(tag)
+    #         if open_count % 2 != 0:  # Если количество тегов нечетное
+    #             lines[i] += tag  # Закрываем тег
+    #
+    # # Собираем текст обратно
+    # return '\n'.join(lines)
+    parts = []
+    current_part = ""
+    stack = []  # Стек для отслеживания открытых тегов
 
-    # Применяем каждое регулярное выражение для поиска и исправления
-    for pattern, replacement in patterns:
-        text = re.sub(pattern, replacement, text)
+    # Регулярное выражение для поиска тегов Markdown
+    markdown_tags = re.compile(r'(\[.*?\]\(.*?\)|[*_]{1,2}.*?[*_]{1,2})')
 
-    # Разделяем текст на строки и проверяем каждую строку на наличие незакрытых тегов
+    # Разделяем текст по строкам
+    text = (text.replace('\\п', '\n').replace('\\П', '\n').replace('\\\\n', '\n').replace('\\n', '\n')
+            .replace('\n', ' \n').replace('\n ', '\n').replace('**', '*').replace('__', '_'))
     lines = text.split('\n')
-    for i, line in enumerate(lines):
-        # Проверяем количество открытых и закрытых тегов
-        for tag in ['**', '__', '*', '_']:
-            open_count = line.count(tag)
-            if open_count % 2 != 0:  # Если количество тегов нечетное
-                lines[i] += tag  # Закрываем тег
 
-    # Собираем текст обратно
-    return '\n'.join(lines)
+    for line in lines:
+        parts.append(current_part.strip())
+        current_part = line + '\n'
+
+        # Проверяем и обновляем стек тегов
+        for tag in markdown_tags.findall(line):
+            if tag.startswith(('*', '_')):
+                if stack and stack[-1] == tag:
+                    stack.pop()
+                else:
+                    stack.append(tag)
+
+    # Добавляем последнюю часть
+    if current_part:
+        parts.append(current_part.strip())
+
+    # Закрываем все открытые теги в последней части
+    if stack:
+        last_part = parts[-1]
+        for tag in reversed(stack):
+            if tag.startswith('*'):
+                last_part += '*'
+            elif tag.startswith('_'):
+                last_part += '_'
+        parts[-1] = last_part
+
+    return '\n'.join(parts)
+

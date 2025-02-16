@@ -100,9 +100,8 @@ async def get_answer(message: Message, state: FSMContext, user_language):
 
     text = await translate_text_with_markdown_links(f'Answer from bot:\n{answer}\n'
                                                     f'If you are not satisfied with the answer from the bot,'
-                                                    f'you can contact with the operator', 'en', user_language, False)
-    text = (text.replace('\\п', '\n').replace('\\П', '\n').replace('\\\\n', '\n').replace('\\n', '\n')
-            .replace('\n', ' \n').replace('\n ', '\n').replace('**', '*').replace('__', '_'))
+                                                    f'you can contact with the operator', 'en', user_language)
+    text = (text)
     max_length = 4096  # Максимальная длина сообщения
     parts = await split_text_with_markdown(text, max_length)
 
