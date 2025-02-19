@@ -12,7 +12,7 @@ async def translate_kb(inline_keyboard, target_language):
     for row in inline_keyboard:
         translated_row = []
         for button in row:
-            translated_text = await translate_text(button.text, 'en', target_language)
+            translated_text = await translate_text(button.text, 'en', target_language, cache=True)
             translated_button = InlineKeyboardButton(text=translated_text, callback_data=button.callback_data)
             translated_row.append(translated_button)
         translated_keyboard.append(translated_row)

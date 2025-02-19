@@ -57,7 +57,8 @@ async def approve_application(message: Message, applications_middleware: Applica
         # Отправка заявления в CMS БД!!!
         await applications_middleware.del_application(user_id)
         await applications_middleware.update_status(user_id, 'approved')
-        await bot.send_message(user_id, await translate_text('Your application has been approved!', 'en', user_lang))
+        await bot.send_message(user_id, await translate_text('Your application has been approved!', 'en', user_lang,
+                                                             cache=True))
         await message.answer('Заявление одобрено, заявитель уведомлен!', reply_markup=admin_menu_keyboard)
         await state.clear()
     elif approve == 'Редактировать заявление':
@@ -146,12 +147,14 @@ async def process_update_application(message: Message, bot: Bot, applications_mi
     elif message.text == 'Нет':
         if old_value_dict['status'] == 'approved':
             await applications_middleware.del_application(user_id)
-            await bot.send_message(user_id, await translate_text('Your application has been approved!', 'en', user_lang))
+            await bot.send_message(user_id, await translate_text('Your application has been approved!', 'en',
+                                                                 user_lang, cache=True))
             await applications_middleware.update_columns_by_dict(old_value_dict, user_id)
             await message.answer('Заявление успешно изменено и одобрено! Заявитель был уведомлен.',
                                  reply_markup=admin_menu_keyboard)
         else:
-            await bot.send_message(user_id, await translate_text('Your application has been changed!', 'en', user_lang))
+            await bot.send_message(user_id, await translate_text('Your application has been changed!', 'en',
+                                                                 user_lang, cache=True))
             await applications_middleware.update_columns_by_dict(old_value_dict, user_id)
             await message.answer('Заявление успешно изменено!',
                                  reply_markup=admin_menu_keyboard)

@@ -1,6 +1,35 @@
 import re
 
 
+# async def fix_unclosed_markdown_tags(text: str) -> str:
+#     """
+#     Исправляет незакрытые Markdown-теги, добавляя недостающие закрывающие символы.
+#     Поддерживаемые теги: **, *, `, ~~
+#     """
+#     tags = [r'\*\*', r'\*', r'`', r'~~']  # Поддерживаемые теги
+#
+#     for tag in tags:
+#         count = len(re.findall(tag, text))
+#         if count % 2 != 0:
+#             text += tag  # Добавляем закрывающий тег в конец строки
+#
+#     return text
+#
+#
+# async def split_text_with_markdown(text: str, max_length: int):
+#     """
+#     Разбивает текст на части, сохраняя целостность Markdown-тегов.
+#     """
+#     parts = []
+#     while len(text) > max_length:
+#         split_index = text.rfind(' ', 0, max_length)
+#         if split_index == -1:
+#             split_index = max_length
+#         parts.append(await fix_unclosed_markdown_tags(text[:split_index]))
+#         text = text[split_index:].lstrip()
+#     parts.append(await fix_unclosed_markdown_tags(text))
+#     return parts
+
 async def split_text_with_markdown(text, max_length):
     if len(text) <= max_length:
         return [text,]

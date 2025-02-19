@@ -6,8 +6,11 @@ menu_keyboard = ReplyKeyboardMarkup(keyboard=[
         KeyboardButton(
             text='FAQ'
         ),
+        # KeyboardButton(
+        #     text='Apply'
+        # ),
         KeyboardButton(
-            text='Apply'
+            text='Contacts'
         )
     ],
     [

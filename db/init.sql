@@ -166,6 +166,7 @@ ALTER TABLE ONLY public.topics ALTER COLUMN topic_id SET DEFAULT nextval('public
 
 COPY public.admins (user_id, user_name) FROM stdin;
 530261570	Седиров Арсен
+679878855	Кожевников Арсений
 \.
 
 
@@ -241,7 +242,6 @@ COPY public.topics (topic_id, topic_name) FROM stdin;
 ----
 --
 --COPY public.users_lang (user_id, user_lang) FROM stdin;
---530261570	en
 --648110443	ru
 --\.
 

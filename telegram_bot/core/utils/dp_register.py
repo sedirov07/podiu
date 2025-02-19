@@ -193,6 +193,8 @@ async def dp_register(dp):
     dp.message.register(basic.change_lang, F.text.lower() == 'change language')
     dp.message.register(partial(basic.get_lang, language_middleware=language_middleware), StepsChangeLang.GET_LANG)
 
+    dp.message.register(basic.get_contacts, F.text.lower() == 'contacts')
+
     dp.message.register(basic.get_topics_faq, F.text.lower().in_(['faq', 'просмотр faq']))
     dp.callback_query.register(basic.get_questions_faq, StepsChooseFaq.GET_TOPIC)
     dp.message.register(basic.get_answer, StepsChooseFaq.NO_ANSWER_IN_FAQ)

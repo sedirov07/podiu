@@ -3,8 +3,8 @@ from langchain_community.chat_models import GigaChat
 
 class GigaModel:
     def __init__(self, auth_key, scope, model_name, searcher):
-        self.params = {'credentials':auth_key, 'scope':scope, 'verify_ssl_certs':False, 'model': model_name}
-        self.llm = GigaChat(**self.params, temperature=0.01)
+        self.params = {'credentials' :auth_key, 'scope': scope, 'verify_ssl_certs': False, 'model': model_name}
+        self.llm = GigaChat(**self.params, temperature=0.01, max_length=3800)
         self.searcher = searcher
 
     async def chat(self, text):
@@ -31,7 +31,7 @@ class GigaModel:
         if len(chunks):
             documents = '\n'.join([f'Question: {c.metadata["question"]}\tAnswer: {c.page_content}' for c in chunks])
             task = f'Using the information provided below to answer the \nFAQ question: {documents}'
-            task = task[:15000] + f'\nQuestion: {new_question}'
+            task = task[:10000] + f'\nQuestion: {new_question}'
             query = system_prompt + '\n' + task
         else:
             task = f'\nQuestion: {new_question}'

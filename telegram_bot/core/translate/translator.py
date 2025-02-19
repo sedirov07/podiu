@@ -15,17 +15,20 @@ async def del_translation_text(text):
             del TRANSLATES[target_language][text]
 
 
-async def translate_text(text, user_language, target_language):
-    if user_language == target_language:
-        return text
-
-    if target_language in TRANSLATES:
-        if text in TRANSLATES[target_language]:
-            return TRANSLATES[target_language][text]
+async def translate_text(text, user_language, target_language, cache=False):
+    if cache and user_language == 'en' or user_language == 'ru':
+        if target_language in TRANSLATES:
+            if text in TRANSLATES[target_language]:
+                if TRANSLATES[target_language][text]:
+                    return TRANSLATES[target_language][text]
+            else:
+                TRANSLATES[target_language][text] = ''
         else:
-            TRANSLATES[target_language][text] = ''
-    else:
-        TRANSLATES[target_language] = {text: ''}
+            TRANSLATES[target_language] = {text: ''}
+
+    if user_language == target_language:
+        print(TRANSLATES)
+        return text
 
     base_url = 'https://translate.api.cloud.yandex.net/translate/v2/translate'
     params = {
@@ -49,8 +52,13 @@ async def translate_text(text, user_language, target_language):
                         for translation in translations:
                             translated_text = translation.get('text')
                             # detected_language = translation.get('detectedLanguageCode')
-                            TRANSLATES[target_language][text] = translated_text
+                            if translated_text and cache:
+                                if target_language in TRANSLATES:
+                                    TRANSLATES[target_language][text] = translated_text
+                                else:
+                                    TRANSLATES[target_language] = {text: translated_text}
                             # logging.info(f'{translated_text}')
+                            print(TRANSLATES)
                             return translated_text
                     else:
                         logging.warning('Translation is not found')
@@ -87,9 +95,9 @@ async def detect_language(text):
             return text
 
 
-async def translate_text_with_markdown_links(text, source_language, target_language):
+async def translate_text_with_markdown_links(text, source_language, target_language, cache=False):
     # Перевести весь текст, включая текст гиперссылок
-    translated_text = await translate_text(text, source_language, target_language)
+    translated_text = await translate_text(text, source_language, target_language, cache=cache)
 
     # Регулярное выражение для поиска гиперссылок Markdown
     link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
@@ -97,7 +105,7 @@ async def translate_text_with_markdown_links(text, source_language, target_langu
 
     # Для каждой найденной гиперссылки переводим текст ссылки и заменяем в переведенном тексте
     for link_text, url in matches:
-        translated_link_text = await translate_text(link_text, source_language, target_language)
+        translated_link_text = await translate_text(link_text, source_language, target_language, cache=cache)
         translated_link = f'[{translated_link_text}]({url})'
         # Заменяем все вхождения оригинальной гиперссылки на переведенную
         translated_text = re.sub(
@@ -112,67 +120,16 @@ async def translate_text_with_markdown_links(text, source_language, target_langu
     return translated_text
 
 
-async def fix_unclosed_markdown_tags(text):
-    # # Регулярные выражения для поиска незакрытых тегов
-    # patterns = [
-    #     (r'\*\*([^*]+)', r'**\1**'),  # Незакрытый **
-    #     (r'__([^_]+)', r'__\1__'),    # Незакрытый __
-    #     (r'\*([^*]+)', r'*\1*'),      # Незакрытый *
-    #     (r'_([^_]+)', r'_\1_'),       # Незакрытый _
-    # ]
-    #
-    # # Применяем каждое регулярное выражение для поиска и исправления
-    # for pattern, replacement in patterns:
-    #     text = re.sub(pattern, replacement, text)
-    #
-    # # Разделяем текст на строки и проверяем каждую строку на наличие незакрытых тегов
-    # lines = text.split('\n')
-    # for i, line in enumerate(lines):
-    #     # Проверяем количество открытых и закрытых тегов
-    #     for tag in ['**', '__', '*', '_']:
-    #         open_count = line.count(tag)
-    #         if open_count % 2 != 0:  # Если количество тегов нечетное
-    #             lines[i] += tag  # Закрываем тег
-    #
-    # # Собираем текст обратно
-    # return '\n'.join(lines)
-    parts = []
-    current_part = ""
-    stack = []  # Стек для отслеживания открытых тегов
+async def fix_unclosed_markdown_tags(text: str) -> str:
+    """
+    Исправляет незакрытые Markdown-теги, добавляя недостающие закрывающие символы.
+    Поддерживаемые теги: **, *, `, ~~
+    """
+    tags = [r'\*', r'\_', r'`', r'~']  # Поддерживаемые теги
 
-    # Регулярное выражение для поиска тегов Markdown
-    markdown_tags = re.compile(r'(\[.*?\]\(.*?\)|[*_]{1,2}.*?[*_]{1,2})')
+    for tag in tags:
+        count = len(re.findall(tag, text))
+        if count % 2 != 0:
+            text += tag.replace('\\', '')  # Добавляем закрывающий тег в конец строки
 
-    # Разделяем текст по строкам
-    text = (text.replace('\\п', '\n').replace('\\П', '\n').replace('\\\\n', '\n').replace('\\n', '\n')
-            .replace('\n', ' \n').replace('\n ', '\n').replace('**', '*').replace('__', '_'))
-    lines = text.split('\n')
-
-    for line in lines:
-        parts.append(current_part.strip())
-        current_part = line + '\n'
-
-        # Проверяем и обновляем стек тегов
-        for tag in markdown_tags.findall(line):
-            if tag.startswith(('*', '_')):
-                if stack and stack[-1] == tag:
-                    stack.pop()
-                else:
-                    stack.append(tag)
-
-    # Добавляем последнюю часть
-    if current_part:
-        parts.append(current_part.strip())
-
-    # Закрываем все открытые теги в последней части
-    if stack:
-        last_part = parts[-1]
-        for tag in reversed(stack):
-            if tag.startswith('*'):
-                last_part += '*'
-            elif tag.startswith('_'):
-                last_part += '_'
-        parts[-1] = last_part
-
-    return '\n'.join(parts)
-
+    return text
