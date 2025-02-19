@@ -27,7 +27,6 @@ async def translate_text(text, user_language, target_language, cache=False):
             TRANSLATES[target_language] = {text: ''}
 
     if user_language == target_language:
-        print(TRANSLATES)
         return text
 
     base_url = 'https://translate.api.cloud.yandex.net/translate/v2/translate'
@@ -58,7 +57,6 @@ async def translate_text(text, user_language, target_language, cache=False):
                                 else:
                                     TRANSLATES[target_language] = {text: translated_text}
                             # logging.info(f'{translated_text}')
-                            print(TRANSLATES)
                             return translated_text
                     else:
                         logging.warning('Translation is not found')
