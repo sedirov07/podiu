@@ -37,4 +37,5 @@ services:
 volumes:
   db_data:
   data_applyes:
+  cache_tg:
   cache:
