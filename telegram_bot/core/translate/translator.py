@@ -1,12 +1,27 @@
 import os
-import requests
 import logging
 import re
 import aiohttp
+import pickle
+import os
 
 
+DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.abspath(os.path.join(DIR, '..', '..'))
+CACHE_DIR = os.path.join(PROJECT_DIR, 'cache_tg')
 YANDEX_API_KEY = os.environ["YANDEX_API_KEY"]
 TRANSLATES = {}
+
+
+async def load_cache():
+    global TRANSLATES
+    with open(f"{CACHE_DIR}/translates.pkl", "rb") as file:
+        TRANSLATES = pickle.load(file)
+
+
+async def save_cache():
+    with open(f"{CACHE_DIR}/translates.pkl", "wb") as file:
+        pickle.dump(TRANSLATES, file)
 
 
 async def del_translation_text(text):

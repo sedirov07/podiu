@@ -51,10 +51,7 @@ async def dp_register(dp):
     applications_table = ApplicationsTable(pool_connect)
     admins_id = [admin.get('user_id') for admin in admins_info]
 
-    for admin_id in admins_id:
-        await IsAdmin.add_admin(admin_id)
-
-    is_admin = IsAdmin()
+    is_admin = IsAdmin(admins_id)
     is_operator = IsOperator()
 
     language_middleware = LanguageMiddleware(LanguagesTable(pool_connect))

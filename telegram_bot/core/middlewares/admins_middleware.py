@@ -13,11 +13,12 @@ class AdminsMiddleware(BaseMiddleware):
         self.db = db
         self.operators = {}
         self.messages_to_operators = {}
-        self.admins_list = None
+        self.admins = None
 
-    async def load_admins_list(self):
+    async def load_admins(self):
         try:
-            self.admins_list = await self.db.get_full_admins_info()
+            admins = await self.db.get_full_admins_info()
+            self.admins = {adm['user_id']: adm['user_name'] for adm in admins}
         except Exception as e:
             logging.error(f"An error occurred while loading admins list: {e}")
 
@@ -33,13 +34,12 @@ class AdminsMiddleware(BaseMiddleware):
             del self.operators[chat_id]
 
     async def add_admin(self, chat_id, full_name):
-        self.admins_list.append((chat_id, full_name))
+        self.admins[chat_id] = full_name
         await self.db.add_admin(chat_id, full_name)
 
     async def del_admin(self, chat_id):
-        for admin in self.admins_list:
-            if admin['user_id'] == chat_id:
-                self.admins_list.remove(admin['user_id'])
+        if chat_id in self.admins:
+            del self.admins[chat_id]
         await self.db.delete_admin(chat_id)
 
     async def add_messages(self, user_id, messages):
@@ -55,11 +55,11 @@ class AdminsMiddleware(BaseMiddleware):
             event: Message,
             data: Dict[str, Any]
     ) -> Any:
-        if self.admins_list is None:
-            await self.load_admins_list()
+        if self.admins is None:
+            await self.load_admins()
 
-        if self.admins_list:
-            data['admins_list'] = self.admins_list
+        if self.admins:
+            data['admins'] = self.admins
 
         data['operators'] = self.operators
         data['messages_dicts'] = self.messages_to_operators

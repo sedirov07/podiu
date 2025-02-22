@@ -3,10 +3,8 @@ from aiogram.types import Message
 
 
 class IsAdmin(BaseFilter):
-    admins_id = []
-
-    def __init__(self):
-        pass
+    def __init__(self, admins_id=[]):
+        self.admins_id = admins_id
 
     async def __call__(self, message: Message) -> bool:
         try:
@@ -14,12 +12,10 @@ class IsAdmin(BaseFilter):
         except Exception:
             return False
 
-    @classmethod
-    async def add_admin(cls, admin_id):
-        cls.admins_id.append(admin_id)
+    async def add_admin(self, admin_id):
+        self.admins_id.append(admin_id)
 
-    @classmethod
-    async def delete_admin(cls, admin_id):
-        for i in range(len(cls.admins_id)):
-            if cls.admins_id[i] == admin_id:
-                cls.admins_id.pop(i)
+    async def delete_admin(self, admin_id):
+        for i in range(len(self.admins_id)):
+            if self.admins_id[i] == admin_id:
+                self.admins_id.pop(i)

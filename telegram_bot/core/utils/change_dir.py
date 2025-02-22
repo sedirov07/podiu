@@ -6,6 +6,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.abspath(os.path.join(DIR, '..', '..'))
 DOCS_DIR = os.path.join(PROJECT_DIR, 'documents')
 
+
 async def make_dir(data, name):
     destination = os.path.join(PROJECT_DIR, 'data_applyes', str(data["telegram_id"]))
     os.makedirs(destination, exist_ok=True)

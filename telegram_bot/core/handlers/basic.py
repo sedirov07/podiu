@@ -125,7 +125,7 @@ async def get_answer(message: Message, state: FSMContext, user_language):
     await state.clear()
 
 
-async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_dict, admins_list, operators,
+async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_dict, admins, operators,
                           admins_middleware: AdminsMiddleware):
     data = await state.get_data()
     user_language = data.get('user_language', 'en')
@@ -181,7 +181,7 @@ async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_
                 else:
                     print(f"Файл {file_path} не найден.")
 
-        if user_id in [admin['user_id'] for admin in admins_list]:
+        if user_id in list(admins.keys()):
             await call.message.answer('Меню:', reply_markup=admin_menu_keyboard)
         else:
             await call.message.answer(await translate_text('Menu:', 'en', user_language, cache=True),

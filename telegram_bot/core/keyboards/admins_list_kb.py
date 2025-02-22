@@ -1,13 +1,13 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-async def create_admins_list_kb(admins_list):
+async def create_admins_list_kb(admins):
     admins_list_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
-                text=f'{admin["user_name"]}',
-                callback_data=f'delete_admin_{admin["user_id"]}'
+                text=f'{v}',
+                callback_data=f'delete_admin_{k}'
             )
-        ] for admin in admins_list
+        ] for k, v in admins.items()
     ])
     return admins_list_keyboard

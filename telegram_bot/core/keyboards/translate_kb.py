@@ -1,9 +1,30 @@
+import pickle
+import os
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from ..translate.translator import translate_text
 
 
 translated_topics_keyboards = {}
 translated_questions_keyboards = {}
+DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.abspath(os.path.join(DIR, '..', '..'))
+CACHE_DIR = os.path.join(PROJECT_DIR, 'cache_tg')
+
+
+async def load_cache():
+    global translated_topics_keyboards
+    global translated_questions_keyboards
+    with open(f"{CACHE_DIR}/translated_topics_keyboards.pkl", "rb") as file:
+        translated_topics_keyboards = pickle.load(file)
+    with open(f"{CACHE_DIR}/translated_questions_keyboards.pkl", "rb") as file:
+        translated_questions_keyboards = pickle.load(file)
+
+
+async def save_cache():
+    with open(f"{CACHE_DIR}/translated_topics_keyboards.pkl", "wb") as file:
+        pickle.dump(translated_topics_keyboards, file)
+    with open(f"{CACHE_DIR}/translated_questions_keyboards.pkl", "wb") as file:
+        pickle.dump(translated_questions_keyboards, file)
 
 
 async def translate_kb(inline_keyboard, target_language):

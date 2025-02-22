@@ -12,28 +12,27 @@ async def manage(message: Message):
     await message.answer('Выберите: ', reply_markup=admin_manage_keyboard)
 
 
-async def start_delete_admin(message: Message, admins_list):
+async def start_delete_admin(message: Message, admins):
     user_id = message.from_user.id
-    admins = [admin['user_id'] for admin in admins_list]
-    if len(admins_list) == 1:
+    if len(admins.keys()) == 1:
         await message.answer('Вы единственный администратор.', reply_markup=admin_menu_keyboard)
     elif user_id in admins:
-        admins_list.pop(admins.index(user_id))
-        admins_keyboard = await create_admins_list_kb(admins_list)
+        admins_ = {k: v for k, v in admins.items() if k != user_id}
+        admins_keyboard = await create_admins_list_kb(admins_)
         await message.answer('Выберите пользователя, которого вы хотите лишить прав администратора:',
                              reply_markup=admins_keyboard)
 
 
-async def finish_delete_admin(call: CallbackQuery, admins_middleware: AdminsMiddleware, is_admin: IsAdmin):
-    admin_id = call.data.split('_')[-1]
+async def finish_delete_admin(call: CallbackQuery, admins_middleware: AdminsMiddleware, is_admin: IsAdmin, admins):
+    admin_id = int(call.data.split('_')[-1])
+    admin_name = admins.get(admin_id, '')
     await admins_middleware.del_admin(admin_id)
     await is_admin.delete_admin(admin_id)
 
     chat_id = call.message.chat.id
     message_id = call.message.message_id
     await call.bot.delete_message(chat_id, message_id)
-
-    await call.message.answer('Пользователь был лишен прав администратора.', reply_markup=admin_menu_keyboard)
+    await call.message.answer(f'Пользователь {admin_name} был лишен прав администратора.', reply_markup=admin_menu_keyboard)
 
 
 async def start_add_admin(message: Message, state: FSMContext):

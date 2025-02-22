@@ -29,6 +29,7 @@ services:
       context: ./telegram_bot
     volumes:
       - data_applyes:/app/data_applyes
+      - cache_tg:/app/cache_tg
     depends_on:
       - db
       - api_model

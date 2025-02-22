@@ -4,6 +4,8 @@ from core.config import setup_environment
 # Настройка окружения
 setup_environment()
 
+from core.keyboards.translate_kb import save_cache, load_cache
+from core.translate.translator import save_cache as save_cache2, load_cache as load_cache2
 from core.utils.commands import set_commands
 from core.utils.dp_register import dp_register
 from create_bot import dp, bot
@@ -18,8 +20,12 @@ async def start():
     await set_commands(bot)
 
     try:
+        await load_cache()
+        await load_cache2()
         await dp.start_polling(bot)
     finally:
+        await save_cache()
+        await save_cache2()
         await bot.session.close()
 
 
