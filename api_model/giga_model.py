@@ -3,8 +3,8 @@ from langchain_community.chat_models import GigaChat
 
 class GigaModel:
     def __init__(self, auth_key, scope, model_name, searcher):
-        self.params = {'credentials' :auth_key, 'scope': scope, 'verify_ssl_certs': False, 'model': model_name}
-        self.llm = GigaChat(**self.params, temperature=0.01, max_length=3800)
+        self.params = {'credentials': auth_key, 'scope': scope, 'verify_ssl_certs': False, 'model': model_name}
+        self.llm = GigaChat(**self.params, temperature=0.01, max_tokens=2500)
         self.searcher = searcher
 
     async def chat(self, text):
