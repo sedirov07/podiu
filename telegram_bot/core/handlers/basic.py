@@ -1,11 +1,10 @@
 import os
-import re
 import aiohttp
 from datetime import datetime, timedelta, timezone
 from aiogram import Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
-from core.keyboards.menu_kb import menu_keyboard
+from core.keyboards.menu_kb import create_menu_keyboard
 from core.keyboards.admin_menu_kb import admin_menu_keyboard
 from core.translate.translator import translate_text, detect_language, translate_text_with_markdown_links
 from core.utils.states_change_lang import StepsChangeLang
@@ -47,19 +46,22 @@ async def get_cancel(message: Message, state: FSMContext):
         await state.clear()
 
 
-async def get_start(message: Message, user_language, state: FSMContext, language_middleware: LanguageMiddleware):
+async def get_start(message: Message, user_language, state: FSMContext, language_middleware: LanguageMiddleware,
+                    buttons):
     if await state.get_state() is not None:
         await state.clear()
     user = message.from_user
     lang = user_language or user.language_code
     if not user_language:
         await language_middleware.add_language(user.id, lang)
+    menu_keyboard = await create_menu_keyboard(user_language, buttons)
     await message.answer(await translate_text('Hello! To communicate with the bot, You can use the most preferred'
                                               'language for You!', 'en', f'{lang}', cache=True),
                          reply_markup=menu_keyboard)
 
 
-async def get_contacts(message: Message, user_language):
+async def get_contacts(message: Message, user_language, buttons):
+    menu_keyboard = await create_menu_keyboard(user_language, buttons)
     await message.answer(await translate_text_with_markdown_links(f'Контакты:\n {contacts}', 'ru', user_language,
                                                                   cache=True), reply_markup=menu_keyboard)
 
@@ -71,8 +73,9 @@ async def change_lang(message: Message, state: FSMContext, user_language):
     await state.set_state(StepsChangeLang.GET_LANG)
 
 
-async def get_lang(message: Message, state: FSMContext, language_middleware: LanguageMiddleware):
+async def get_lang(message: Message, state: FSMContext, language_middleware: LanguageMiddleware, buttons):
     lang = await detect_language(message.text)
+    menu_keyboard = await create_menu_keyboard(lang, buttons)
     await message.answer(await translate_text(f'Your language has been changed to "{lang}"', 'en', f'{lang}',
                                               cache=True), reply_markup=menu_keyboard)
     await language_middleware.change_language(message.from_user.id, lang)
@@ -126,7 +129,7 @@ async def get_answer(message: Message, state: FSMContext, user_language):
 
 
 async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_dict, admins, operators,
-                          admins_middleware: AdminsMiddleware):
+                          admins_middleware: AdminsMiddleware, buttons):
     data = await state.get_data()
     user_language = data.get('user_language', 'en')
     topic = data.get('topic', 'VISA')
@@ -147,6 +150,7 @@ async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_
                                                               'en', user_language, cache=True))
             await contact_with_operator(bot, operators, first_name, user_id, admins_middleware, user_language)
         else:
+            menu_keyboard = await create_menu_keyboard(user_language, buttons)
             await call.message.answer(await translate_text("You can contact the operator only from 3:00 to 13:00 UTC",
                                                            'en', user_language, cache=True),
                                       reply_markup=menu_keyboard)
@@ -184,9 +188,9 @@ async def send_answer_faq(call: CallbackQuery, bot: Bot, state: FSMContext, faq_
         if user_id in list(admins.keys()):
             await call.message.answer('Меню:', reply_markup=admin_menu_keyboard)
         else:
+            menu_keyboard = await create_menu_keyboard(user_language, buttons)
             await call.message.answer(await translate_text('Menu:', 'en', user_language, cache=True),
                                       reply_markup=menu_keyboard)
-
         await state.clear()
 
 
@@ -202,8 +206,8 @@ async def contact_with_operator(bot, operators, first_name, user_id, admins_midd
         await admins_middleware.add_messages(user_id, messages)
 
     else:
-        await bot.send_message(user_id=user_id, message=await translate_text('Operators are missing now.',
-                                                                             'en', user_language, cache=True))
+        await bot.send_message(user_id, await translate_text('Operators are missing now.',
+                                                             'en', user_language, cache=True))
 
 
 async def operator_ready(call: CallbackQuery, bot: Bot, admins_middleware: AdminsMiddleware, messages_dicts, operators):

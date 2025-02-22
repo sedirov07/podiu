@@ -7,7 +7,7 @@ from aiogram import Bot
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from core.keyboards.consent_kb import consent_keyboard, for_whom_keyboard, no_keyboard, yes_or_no_keyboard
-from core.keyboards.menu_kb import menu_keyboard
+from core.keyboards.menu_kb import create_menu_keyboard
 from core.keyboards.admin_review_kb import review_kb
 from core.keyboards.faq_kb import contact_with_operator_keyboard
 from core.middlewares.applications_middleware import ApplicationsMiddleware
@@ -40,8 +40,8 @@ async def is_valid_email(email):
     return bool(re.match(regex, email))
 
 
-async def start_submit_apply(message: Message, applications_middleware: ApplicationsMiddleware, user_language,
-                             state: FSMContext):
+async def start_submit_apply(message: Message, applications_middleware: ApplicationsMiddleware, buttons,
+                             user_language, state: FSMContext):
     user_id = message.from_user.id
     is_user = await applications_middleware.is_application(user_id)
     if is_user is None:
@@ -55,14 +55,16 @@ async def start_submit_apply(message: Message, applications_middleware: Applicat
                              reply_markup=consent_keyboard)
         await state.set_state(StepsApply.WAITING_FOR_CONSENT)
     else:
+        menu_keyboard = await create_menu_keyboard(user_language, buttons)
         await message.answer(await translate_text("You cannot resubmit your application while your previous application"
                                                   "is under review!", 'en', user_language, cache=True),
                              reply_markup=menu_keyboard)
 
 
-async def finish_consent(message: Message, state: FSMContext):
+async def finish_consent(message: Message, state: FSMContext, buttons):
     data = await state.get_data()
     user_language = data.get('user_language', 'en')
+    menu_keyboard = await create_menu_keyboard(user_language, buttons)
     await message.answer(await translate_text("You cannot submit an application without consent to the processing of your"
                                               "data.", 'en', user_language, cache=True),
                          reply_markup=menu_keyboard)
@@ -86,7 +88,7 @@ async def process_consent(message: Message, state: FSMContext):
     await state.set_state(StepsApply.WAITING_FOR_PERSONAL_INFO)
 
 
-async def process_personal_info(message: Message, state: FSMContext):
+async def process_personal_info(message: Message, state: FSMContext, buttons):
     data = await state.get_data()
     user_language = data.get('user_language', 'en')
     date_pattern = re.compile(r'(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])-\d{4}$')
@@ -134,6 +136,7 @@ async def process_personal_info(message: Message, state: FSMContext):
                 await message.answer(await translate_text("Enter your contact phone number.", 'en', user_language, cache=True))
                 
             else:
+                menu_keyboard = await create_menu_keyboard(user_language, buttons)
                 await message.answer(await translate_text("Age limits for submitting an application: 18+ years old!",
                                                           'en', user_language, cache=True), reply_markup=menu_keyboard)
                 await state.clear()
@@ -318,7 +321,7 @@ async def process_agree_comments(message: Message, state: FSMContext):
 
 
 async def finish_apply(message: Message, applications_middleware: ApplicationsMiddleware, bot: Bot, user_language,
-                       admins_list, operators, state: FSMContext):
+                       admins_list, operators, state: FSMContext, buttons):
     if 'Yes' in message.text:
         data = await state.get_data()
         
@@ -337,6 +340,7 @@ async def finish_apply(message: Message, applications_middleware: ApplicationsMi
         result = await applications_middleware.add_application_to_db(data)
         
         if result:
+            menu_keyboard = await create_menu_keyboard(user_language, buttons)
             await message.answer(await translate_text("Thanks! Your application has been submitted for consideration.",
                                                       'en', user_language, cache=True),
                                  reply_markup=menu_keyboard)
@@ -356,6 +360,7 @@ async def finish_apply(message: Message, applications_middleware: ApplicationsMi
                                                       'en', user_language, cache=True), reply_markup=contact_with_operator_keyboard)
 
     else:
+        menu_keyboard = await create_menu_keyboard(user_language, buttons)
         await message.answer(await translate_text("Your application has not been saved!", 'en', user_language, cache=True),
                              reply_markup=menu_keyboard)
     await state.clear()

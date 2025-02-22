@@ -1,6 +1,6 @@
 import pickle
 import os
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from ..translate.translator import translate_text
 
 
@@ -39,6 +39,26 @@ async def translate_kb(inline_keyboard, target_language):
         translated_keyboard.append(translated_row)
 
     return InlineKeyboardMarkup(inline_keyboard=translated_keyboard)
+
+
+async def translate_reply_kb(reply_keyboard, target_language, buttons):
+    translated_keyboard = []
+
+    for row in reply_keyboard.keyboard:
+        translated_row = []
+        for button in row:
+            # Переводим текст кнопки
+            translated_text = await translate_text(button.text, 'en', target_language, cache=True)
+            if button.text.lower() in buttons:
+                if translated_text.lower() not in buttons[button.text.lower()]:
+                    buttons[button.text.lower()].append(translated_text.lower())
+            # Создаём новую кнопку с переведённым текстом
+            translated_button = KeyboardButton(text=translated_text)
+            translated_row.append(translated_button)
+        translated_keyboard.append(translated_row)
+
+    # Возвращаем новую клавиатуру с переведёнными кнопками
+    return ReplyKeyboardMarkup(keyboard=translated_keyboard, resize_keyboard=True, one_time_keyboard=True)
 
 
 async def translate_faq_keyboard(inline_keyboard, level, target_language):

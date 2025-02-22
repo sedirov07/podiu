@@ -7,7 +7,7 @@ setup_environment()
 from core.keyboards.translate_kb import save_cache, load_cache
 from core.translate.translator import save_cache as save_cache2, load_cache as load_cache2
 from core.utils.commands import set_commands
-from core.utils.dp_register import dp_register
+from core.utils.dp_register import dp_register, save_buttons
 from create_bot import dp, bot
 from logging_config import conf_logging
 
@@ -24,6 +24,7 @@ async def start():
         await load_cache2()
         await dp.start_polling(bot)
     finally:
+        await save_buttons()
         await save_cache()
         await save_cache2()
         await bot.session.close()

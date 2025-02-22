@@ -1,5 +1,6 @@
 import os
 import asyncpg
+import pickle
 from core.utils.states_change_lang import StepsChangeLang
 from core.utils.states_choose_faq import StepsChooseFaq
 from core.utils.states_change_topic import StepsChangeTopic, StepsAddTopic
@@ -36,6 +37,19 @@ DB_PASSWORD = os.environ["DB_PASSWORD"]
 DB_HOST = os.environ["DB_HOST"]
 DB_PORT = os.environ["DB_PORT"]
 DB_NAME = os.environ["DB_NAME"]
+DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.abspath(os.path.join(DIR, '..', '..'))
+CACHE_DIR = os.path.join(PROJECT_DIR, 'cache_tg')
+buttons = {}
+# buttons = {'faq': ['faq',], 'contacts': ['contacts',], 'change language': ['change language',],
+#            'apply': ['apply',], "❌ i don't agree": ["❌ i don't agree",], '✅ i agree': ['✅ i agree',],
+#            'for myself': ['for myself',], 'for another person': ['for another person',],
+#            '✅ yes': ['✅ yes',], '❌ no': ['❌ no',]}
+
+
+async def save_buttons():
+    with open(f"{CACHE_DIR}/translated_buttons.pkl", "wb") as file:
+        pickle.dump(buttons, file)
 
 
 async def create_pool():
@@ -53,6 +67,10 @@ async def dp_register(dp):
 
     is_admin = IsAdmin(admins_id)
     is_operator = IsOperator()
+
+    global buttons
+    with open(f"{CACHE_DIR}/translated_buttons.pkl", "rb") as file:
+        buttons = pickle.load(file)
 
     language_middleware = LanguageMiddleware(LanguagesTable(pool_connect))
     faq_middleware = FAQMiddleware(FAQTable(pool_connect))
@@ -185,37 +203,42 @@ async def dp_register(dp):
     dp.message.register(partial(admin_modify_operators.get_last_name_operator, admins_middleware=admins_middleware,
                                 is_operator=is_operator), StepsAddOperator.GET_LAST_NAME, is_admin)
 
-    dp.message.register(partial(basic.get_start, language_middleware=language_middleware),
+    dp.message.register(partial(basic.get_start, language_middleware=language_middleware, buttons=buttons),
                         Command(commands=['start', 'run']))
-    dp.message.register(basic.change_lang, F.text.lower() == 'change language')
-    dp.message.register(partial(basic.get_lang, language_middleware=language_middleware), StepsChangeLang.GET_LANG)
+    # dp.message.register(basic.change_lang, F.text.lower() == 'change language')
+    dp.message.register(basic.change_lang, F.text.lower().in_(buttons['change language']))
+    dp.message.register(partial(basic.get_lang, language_middleware=language_middleware, buttons=buttons),
+                        StepsChangeLang.GET_LANG)
 
-    dp.message.register(basic.get_contacts, F.text.lower() == 'contacts')
+    dp.message.register(partial(basic.get_contacts, buttons=buttons), F.text.lower().in_(buttons['contacts']))
 
-    dp.message.register(basic.get_topics_faq, F.text.lower().in_(['faq', 'просмотр faq']))
+    # dp.message.register(basic.get_topics_faq, F.text.lower().in_(['faq', 'просмотр faq']))
+    # dp.message.register(basic.get_topics_faq, is_button.in_(['faq', 'просмотр faq']))
+    dp.message.register(basic.get_topics_faq, F.text.lower().in_(buttons['faq']) | F.text.lower().in_(['просмотр faq']))
     dp.callback_query.register(basic.get_questions_faq, StepsChooseFaq.GET_TOPIC)
     dp.message.register(basic.get_answer, StepsChooseFaq.NO_ANSWER_IN_FAQ)
-    dp.callback_query.register(partial(basic.send_answer_faq, admins_middleware=admins_middleware),
+    dp.callback_query.register(partial(basic.send_answer_faq, admins_middleware=admins_middleware, buttons=buttons),
                                StepsChooseFaq.GET_QUESTION or F.data.startswith('contact_with_operator'))
 
     dp.callback_query.register(partial(basic.operator_ready, admins_middleware=admins_middleware),
                                F.data.startswith('operator_is_ready'), is_operator)
     dp.callback_query.register(basic.operator_not_ready, F.data.startswith('operator_is_not_ready'), is_operator)
 
-    # dp.message.register(partial(apply.start_submit_apply, applications_middleware=applications_middleware),
-    #                     F.text.lower() == 'apply')
-    # dp.message.register(apply.finish_consent, F.text == "❌ I don't agree", StepsApply.WAITING_FOR_CONSENT)
-    # dp.message.register(apply.process_consent, F.text == "✅ I agree", StepsApply.WAITING_FOR_CONSENT)
-    # dp.message.register(apply.process_personal_info, StepsApply.WAITING_FOR_PERSONAL_INFO)
+    # dp.message.register(partial(apply.start_submit_apply, applications_middleware=applications_middleware,
+    #                     is_button=is_button), F.text.lower().in_(buttons['apply'])
+    # dp.message.register(partial(apply.finish_consent, is_button=is_button), F.text.lower().in_(buttons["❌ i don't agree"]), StepsApply.WAITING_FOR_CONSENT)
+    # dp.message.register(apply.process_consent, F.text.lower().in_(buttons["✅ i agree"]), StepsApply.WAITING_FOR_CONSENT)
+    # dp.message.register(partial(apply.process_personal_info, buttons=buttons), StepsApply.WAITING_FOR_PERSONAL_INFO)
     # dp.message.register(apply.process_passport_data, StepsApply.WAITING_FOR_PASSPORT)
     # dp.message.register(apply.process_ru_passport_data, StepsApply.WAITING_FOR_RU_PASSPORT)
     # dp.message.register(apply.process_visa_application_form_data, StepsApply.WAITING_FOR_VISA)
     # dp.message.register(apply.process_bank_statement_data, StepsApply.WAITING_FOR_BANK_STATEMENT)
-    # dp.message.register(apply.process_application_type, F.text.in_(["For myself", "For another person"]),
-    #                     StepsApply.WAITING_FOR_TYPE)
+    # dp.message.register(apply.process_application_type, (F.text.lower().in_(buttons["for myself"])) |
+    #                     (F.text.lower().in_(buttons["for another person"])), StepsApply.WAITING_FOR_TYPE)
     # dp.message.register(apply.process_agree_comments, StepsApply.WAITING_FOR_COMMENTS)
-    # dp.message.register(partial(apply.finish_apply, applications_middleware=applications_middleware),
-    #                     F.text.in_(["✅ Yes", "❌ No"]), StepsApply.WAITING_FOR_APPLY)
+    # dp.message.register(partial(apply.finish_apply, applications_middleware=applications_middleware,
+    #                     buttons=buttons), (F.text.lower().in_(buttons["✅ yes"]) | F.text.lower().in_(["❌ no"])),
+    #                     StepsApply.WAITING_FOR_APPLY)
     #
     # dp.callback_query.register(partial(admin_apply_review.review_application,
     #                                    applications_middleware=applications_middleware),
