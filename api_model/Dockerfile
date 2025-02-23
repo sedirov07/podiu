@@ -14,7 +14,7 @@ COPY . /app
 EXPOSE 8082
 
 # Устанавливаем зависимости
-RUN pip install --no-cache-dir --no-deps -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Команда, которая будет выполнена при запуске контейнера
 CMD ["python", "main.py"]
